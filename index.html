@@ -39,14 +39,13 @@
         .players-area { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin: 20px 0; }
         .player-card { background: rgba(0,0,0,0.6); border: 2px solid #ff6600; border-radius: 15px; padding: 15px; min-width: 120px; text-align: center; }
         .player-card.filled { border-color: #00ff00; background: rgba(0,100,0,0.3); }
-        .player-card img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; }
-        .code-box { font-size: 2em; text-align: center; background: #000; padding: 15px; border-radius: 15px; letter-spacing: 8px; color: #ffcc00; margin: 15px 0; font-weight: bold; }
+        .code-box { font-size: 2.5em; text-align: center; background: #000; padding: 15px; border-radius: 15px; letter-spacing: 8px; color: #ffcc00; margin: 15px 0; font-weight: bold; }
         .team-card { background: rgba(0,0,0,0.6); border-left: 4px solid #ffcc00; padding: 12px; margin: 8px 0; display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; }
         .quiz-area { background: rgba(0,0,0,0.95); border-radius: 20px; padding: 25px; }
         .question-text { font-size: 1.2em; text-align: center; margin: 25px 0; color: #ffcc00; }
         .answers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
         .answer { background: #333; border: 2px solid #ff6600; padding: 15px; border-radius: 15px; cursor: pointer; text-align: center; transition: 0.2s; }
-        .answer:hover { background: #ff3300; }
+        .answer:hover { background: #ff3300; transform: scale(1.02); }
         .progress-bar { width: 100%; height: 12px; background: #333; border-radius: 10px; overflow: hidden; margin: 20px 0; }
         .progress-fill { height: 100%; background: linear-gradient(90deg, #ffcc00, #ff6600); width: 0%; transition: width 0.3s; }
         .forum-msg { background: rgba(0,0,0,0.5); border-left: 3px solid #ff6600; padding: 12px; margin: 8px 0; border-radius: 8px; }
@@ -54,7 +53,7 @@
         .music-btn { position: fixed; bottom: 20px; right: 20px; background: #000; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #ff6600; z-index: 200; font-size: 22px; }
         .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #ffcc00; color: #000; padding: 10px 20px; border-radius: 30px; z-index: 1000; font-weight: bold; animation: fadeOut 2s; }
         @keyframes fadeOut { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
-        @media (max-width: 700px) { .answers { grid-template-columns: 1fr; } .code-box { font-size: 1.2em; } }
+        @media (max-width: 700px) { .answers { grid-template-columns: 1fr; } .code-box { font-size: 1.5em; letter-spacing: 5px; } }
     </style>
 </head>
 <body>
@@ -84,14 +83,12 @@
                 <div style="margin-bottom:25px;"><h3>🚀 CRÉER UN SALON</h3>
                     <input type="text" id="teamName" placeholder="Nom de l'équipe (ex: CLAN KILLER)">
                     <input type="text" id="playerName" placeholder="Ton pseudo">
-                    <input type="file" id="playerPhoto" accept="image/*">
                     <button class="btn btn-green" onclick="createTeam()">🔥 CRÉER</button>
                 </div>
                 <hr style="border-color:#ff6600;">
                 <div style="margin-top:25px;"><h3>🔑 REJOINDRE UN SALON</h3>
                     <input type="text" id="joinCode" maxlength="4" placeholder="Code 4 chiffres">
                     <input type="text" id="joinPlayerName" placeholder="Ton pseudo">
-                    <input type="file" id="joinPlayerPhoto" accept="image/*">
                     <button class="btn" onclick="joinTeam()">🔐 REJOINDRE</button>
                 </div>
             </div>
@@ -114,21 +111,20 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
 <script>
-// FIREBASE
+// ========== FIREBASE CONFIG ==========
 const firebaseConfig = {
-    apiKey: "AIzaSyAQI15uRPi-KpQbX4dbLKz1TdzlvHPo_14",
-    authDomain: "joy-purge-game-v2.firebaseapp.com",
-    projectId: "joy-purge-game-v2",
-    storageBucket: "joy-purge-game-v2.firebasestorage.app",
-    messagingSenderId: "1002586059927",
-    appId: "1:1002586059927:web:c46c898954ddcb4dee65d2"
+    apiKey: "AIzaSyCIAbgsaNBm2K2NhHzkefT77eOW2wwiBhw",
+    authDomain: "joy-purge-game.firebaseapp.com",
+    projectId: "joy-purge-game",
+    storageBucket: "joy-purge-game.firebasestorage.app",
+    messagingSenderId: "266355310555",
+    appId: "1:266355310555:web:5d5296e5b138d4221db1fe"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const storage = firebase.storage();
 
 // VARIABLES
 let currentRoomCode = null;
@@ -147,7 +143,6 @@ function initMusic() { bgMusic = document.getElementById('bgMusic'); if(bgMusic)
 function toggleMusic() { if(!bgMusic) initMusic(); if(musicPlaying) { bgMusic.pause(); musicPlaying=false; document.getElementById('musicBtn').innerHTML='🎵'; } else { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }
 document.body.addEventListener('click', ()=>{ if(!musicPlaying && bgMusic) { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }, {once:true});
 
-// UTILITAIRES
 function toast(msg, isError) {
     let t = document.createElement('div');
     t.className = 'toast';
@@ -171,77 +166,47 @@ function showSection(section) {
 
 // CLASSEMENT
 async function loadRanking() {
-    let snap = await db.ref('teams/partie1').once('value');
-    let teams = [];
-    snap.forEach(c => teams.push(c.val()));
-    teams.sort((a,b) => (b.score||0) - (a.score||0));
-    let div = document.getElementById('rankingList');
-    if(teams.length === 0) { div.innerHTML = 'Aucune équipe classée'; return; }
-    div.innerHTML = teams.map((t,i) => `<div class="team-card"><div><b>${i===0?'👑 ':''}⚔️ ${escapeHtml(t.teamName)}</b><br><small>${t.players ? Object.values(t.players).map(p=>escapeHtml(p.name)).join(' · ') : ''}</small></div><div>⭐ ${t.score||0} pts</div></div>`).join('');
+    try {
+        let snap = await db.ref('teams/partie1').once('value');
+        let teams = [];
+        snap.forEach(c => teams.push(c.val()));
+        teams.sort((a,b) => (b.score||0) - (a.score||0));
+        let div = document.getElementById('rankingList');
+        if(teams.length === 0) { div.innerHTML = 'Aucune équipe classée'; return; }
+        div.innerHTML = teams.map((t,i) => `<div class="team-card"><div><b>${i===0?'👑 ':''}⚔️ ${escapeHtml(t.teamName)}</b><br><small>${t.players ? Object.values(t.players).map(p=>escapeHtml(p.name)).join(' · ') : ''}</small></div><div>⭐ ${t.score||0} pts</div></div>`).join('');
+    } catch(e) { console.log(e); }
 }
 
 // FORUM
 async function loadForum() {
-    let snap = await db.ref('forum').once('value');
-    let msgs = [];
-    snap.forEach(c => msgs.push(c.val()));
-    msgs.reverse();
-    let div = document.getElementById('forumList');
-    if(msgs.length === 0) { div.innerHTML = 'Aucun message'; return; }
-    div.innerHTML = msgs.map(m => `<div class="forum-msg"><b>🔥 ${escapeHtml(m.author)}</b> <small>${m.date||''}</small><br>${escapeHtml(m.message)}</div>`).join('');
+    try {
+        let snap = await db.ref('forum').once('value');
+        let msgs = [];
+        snap.forEach(c => msgs.push(c.val()));
+        msgs.reverse();
+        let div = document.getElementById('forumList');
+        if(msgs.length === 0) { div.innerHTML = 'Aucun message'; return; }
+        div.innerHTML = msgs.map(m => `<div class="forum-msg"><b>🔥 ${escapeHtml(m.author)}</b> <small>${m.date||''}</small><br>${escapeHtml(m.message)}</div>`).join('');
+    } catch(e) { console.log(e); }
 }
 
 async function postMessage() {
     let author = document.getElementById('forumPseudo').value.trim();
     let message = document.getElementById('forumMessage').value.trim();
     if(!author || !message) { toast("Pseudo et message requis", true); return; }
-    await db.ref('forum').push({ author: author, message: message, date: new Date().toLocaleString() });
-    toast("Message publié !");
-    document.getElementById('forumPseudo').value = '';
-    document.getElementById('forumMessage').value = '';
-    loadForum();
-}
-
-// PHOTO UPLOAD
-function previewPhoto(input, divId) {
-    let preview = document.getElementById(divId);
-    if(!preview) return;
-    preview.innerHTML = '';
-    if(input.files && input.files[0]) {
-        let reader = new FileReader();
-        reader.onload = (e) => {
-            let img = document.createElement('img');
-            img.src = e.target.result;
-            img.style.width = '60px';
-            img.style.height = '60px';
-            img.style.borderRadius = '50%';
-            img.style.border = '2px solid #ffcc00';
-            img.style.marginTop = '8px';
-            preview.appendChild(img);
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-document.getElementById('playerPhoto')?.addEventListener('change', (e) => previewPhoto(e.target, 'photoPreview1'));
-document.getElementById('joinPlayerPhoto')?.addEventListener('change', (e) => previewPhoto(e.target, 'photoPreview2'));
-
-let p1 = document.createElement('div'); p1.id = 'photoPreview1';
-let p2 = document.createElement('div'); p2.id = 'photoPreview2';
-document.getElementById('playerPhoto')?.after(p1);
-document.getElementById('joinPlayerPhoto')?.after(p2);
-
-async function uploadPhoto(file, path) {
-    if(!file) return null;
-    let ref = storage.ref(`${path}_${Date.now()}_${file.name}`);
-    await ref.put(file);
-    return await ref.getDownloadURL();
+    try {
+        await db.ref('forum').push({ author: author, message: message, date: new Date().toLocaleString() });
+        toast("Message publié !");
+        document.getElementById('forumPseudo').value = '';
+        document.getElementById('forumMessage').value = '';
+        loadForum();
+    } catch(e) { toast("Erreur: " + e.message, true); }
 }
 
 // CRÉER SALON
 async function createTeam() {
     let teamName = document.getElementById('teamName').value.trim();
     let playerName = document.getElementById('playerName').value.trim();
-    let photoFile = document.getElementById('playerPhoto').files[0];
     
     if(!teamName) { toast("Nom de l'équipe requis", true); return; }
     if(!playerName) { toast("Ton pseudo requis", true); return; }
@@ -249,60 +214,57 @@ async function createTeam() {
     let code = Math.floor(1000 + Math.random() * 9000).toString();
     let roomRef = db.ref(`game_rooms/${code}`);
     
-    let exists = await roomRef.once('value');
-    if(exists.exists()) { createTeam(); return; }
-    
-    let photoUrl = photoFile ? await uploadPhoto(photoFile, `players/${currentPlayerId}`) : null;
-    
-    await roomRef.set({
-        teamName: teamName,
-        players: {
-            [currentPlayerId]: {
-                id: currentPlayerId,
-                name: playerName,
-                photo: photoUrl,
-                score: 0,
-                answers: []
-            }
-        },
-        currentQuestion: 0,
-        status: 'waiting',
-        scorePart1: 0,
-        createdAt: Date.now()
-    });
-    
-    toast(`✅ Salon "${teamName}" créé ! Code: ${code}`);
-    enterRoom(code);
+    try {
+        let exists = await roomRef.once('value');
+        if(exists.exists()) { createTeam(); return; }
+        
+        await roomRef.set({
+            teamName: teamName,
+            players: {
+                [currentPlayerId]: {
+                    id: currentPlayerId,
+                    name: playerName,
+                    score: 0,
+                    answers: []
+                }
+            },
+            currentQuestion: 0,
+            status: 'waiting',
+            scorePart1: 0,
+            createdAt: Date.now()
+        });
+        
+        toast(`✅ Salon "${teamName}" créé ! Code: ${code}`);
+        enterRoom(code);
+    } catch(e) { toast("Erreur: " + e.message, true); }
 }
 
 // REJOINDRE SALON
 async function joinTeam() {
     let code = document.getElementById('joinCode').value.trim();
     let playerName = document.getElementById('joinPlayerName').value.trim();
-    let photoFile = document.getElementById('joinPlayerPhoto').files[0];
     
     if(!code || code.length !== 4) { toast("Code invalide (4 chiffres)", true); return; }
     if(!playerName) { toast("Ton pseudo requis", true); return; }
     
     let roomRef = db.ref(`game_rooms/${code}`);
-    let room = (await roomRef.once('value')).val();
     
-    if(!room) { toast("Salon introuvable", true); return; }
-    if(Object.keys(room.players).length >= 4) { toast("Salon complet (4/4)", true); return; }
-    if(room.status !== 'waiting') { toast("Partie déjà commencée", true); return; }
-    
-    let photoUrl = photoFile ? await uploadPhoto(photoFile, `players/${currentPlayerId}`) : null;
-    
-    await roomRef.child(`players/${currentPlayerId}`).set({
-        id: currentPlayerId,
-        name: playerName,
-        photo: photoUrl,
-        score: 0,
-        answers: []
-    });
-    
-    toast(`✅ Rejoint "${room.teamName}"`);
-    enterRoom(code);
+    try {
+        let room = (await roomRef.once('value')).val();
+        if(!room) { toast("Salon introuvable", true); return; }
+        if(Object.keys(room.players).length >= 4) { toast("Salon complet (4/4)", true); return; }
+        if(room.status !== 'waiting') { toast("Partie déjà commencée", true); return; }
+        
+        await roomRef.child(`players/${currentPlayerId}`).set({
+            id: currentPlayerId,
+            name: playerName,
+            score: 0,
+            answers: []
+        });
+        
+        toast(`✅ Rejoint "${room.teamName}"`);
+        enterRoom(code);
+    } catch(e) { toast("Erreur: " + e.message, true); }
 }
 
 function enterRoom(code) {
@@ -313,7 +275,7 @@ function enterRoom(code) {
     watchRoom(code);
 }
 
-    function watchRoom(code) {
+function watchRoom(code) {
     let roomRef = db.ref(`game_rooms/${code}`);
     roomListener = roomRef.on('value', async (snap) => {
         let room = snap.val();
@@ -336,7 +298,7 @@ function enterRoom(code) {
             for(let i = 1; i <= 4; i++) {
                 let p = Object.values(players)[i-1];
                 html += `<div class="player-card ${p ? 'filled' : ''}">
-                    ${p ? (p.photo ? `<img src="${p.photo}">` : `<div style="font-size:2.5em;">👤</div>`) : `<div style="font-size:2.5em;">❓</div>`}
+                    <div style="font-size:2.5em;">${p ? '👤' : '❓'}</div>
                     <div><strong>${p ? escapeHtml(p.name) : 'En attente...'}</strong></div>
                 </div>`;
             }
@@ -507,7 +469,7 @@ function showFinalResults(room) {
     
     players.forEach(p => {
         html += `<div class="player-card filled">
-            ${p.photo ? `<img src="${p.photo}">` : `<div style="font-size:2em;">👤</div>`}
+            <div style="font-size:2.5em;">👤</div>
             <div><strong>${escapeHtml(p.name)}</strong><br><span style="color:#ffcc00;">🎯 ${p.score} pts</span></div>
         </div>`;
     });
@@ -533,10 +495,6 @@ async function leaveRoom() {
     document.getElementById('teamName').value = '';
     document.getElementById('playerName').value = '';
     document.getElementById('joinPlayerName').value = '';
-    document.getElementById('playerPhoto').value = '';
-    document.getElementById('joinPlayerPhoto').value = '';
-    document.getElementById('photoPreview1').innerHTML = '';
-    document.getElementById('photoPreview2').innerHTML = '';
     toast("Salon quitté");
 }
 
