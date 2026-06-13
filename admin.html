@@ -83,15 +83,16 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
 <script>
-// FIREBASE
+// ========== FIREBASE CONFIG ==========
 const firebaseConfig = {
-    apiKey: "AIzaSyAQI15uRPi-KpQbX4dbLKz1TdzlvHPo_14",
-    authDomain: "joy-purge-game-v2.firebaseapp.com",
-    projectId: "joy-purge-game-v2",
-    storageBucket: "joy-purge-game-v2.firebasestorage.app",
-    messagingSenderId: "1002586059927",
-    appId: "1:1002586059927:web:c46c898954ddcb4dee65d2"
+    apiKey: "AIzaSyCIAbgsaNBm2K2NhHzkefT77eOW2wwiBhw",
+    authDomain: "joy-purge-game.firebaseapp.com",
+    projectId: "joy-purge-game",
+    storageBucket: "joy-purge-game.firebasestorage.app",
+    messagingSenderId: "266355310555",
+    appId: "1:266355310555:web:5d5296e5b138d4221db1fe"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const storage = firebase.storage();
@@ -138,22 +139,24 @@ async function loadAllQuestions() {
 }
 
 async function loadQuestions(mode, containerId) {
-    let snap = await db.ref(`questions/${mode}`).once('value');
-    let questions = [];
-    snap.forEach(c => questions.push({ id: c.key, ...c.val() }));
-    let container = document.getElementById(containerId);
-    if(questions.length === 0) { container.innerHTML = '<p>Aucune question</p>'; return; }
-    container.innerHTML = questions.map((q, i) => `
-        <div class="question-item">
-            <b>❓ ${i+1}. ${escapeHtml(q.text)}</b><br>
-            A. ${escapeHtml(q.answers[0])}<br>
-            B. ${escapeHtml(q.answers[1])}<br>
-            C. ${escapeHtml(q.answers[2])}<br>
-            D. ${escapeHtml(q.answers[3])}<br>
-            ✅ Bonne réponse: ${String.fromCharCode(65+q.correct)}
-            <button class="btn-red" onclick="deleteQuestion('${mode}', '${q.id}')">🗑️</button>
-        </div>
-    `).join('');
+    try {
+        let snap = await db.ref(`questions/${mode}`).once('value');
+        let questions = [];
+        snap.forEach(c => questions.push({ id: c.key, ...c.val() }));
+        let container = document.getElementById(containerId);
+        if(questions.length === 0) { container.innerHTML = '<p>Aucune question</p>'; return; }
+        container.innerHTML = questions.map((q, i) => `
+            <div class="question-item">
+                <b>❓ ${i+1}. ${escapeHtml(q.text)}</b><br>
+                A. ${escapeHtml(q.answers[0])}<br>
+                B. ${escapeHtml(q.answers[1])}<br>
+                C. ${escapeHtml(q.answers[2])}<br>
+                D. ${escapeHtml(q.answers[3])}<br>
+                ✅ Bonne réponse: ${String.fromCharCode(65+q.correct)}
+                <button class="btn-red" onclick="deleteQuestion('${mode}', '${q.id}')">🗑️</button>
+            </div>
+        `).join('');
+    } catch(e) { console.log(e); }
 }
 
 // AJOUT QUESTIONS
@@ -169,20 +172,21 @@ async function addTextQuestion() {
     
     if(!text || answers.some(a => !a)) { toast("Remplis tous les champs"); return; }
     
-    await db.ref('questions/partie1').push({
-        text: text,
-        answers: answers,
-        correct: correct,
-        createdAt: Date.now()
-    });
-    
-    toast("✅ Question ajoutée !");
-    document.getElementById('q1Text').value = '';
-    document.getElementById('q1A').value = '';
-    document.getElementById('q1B').value = '';
-    document.getElementById('q1C').value = '';
-    document.getElementById('q1D').value = '';
-    loadQuestions('partie1', 'questions1List');
+    try {
+        await db.ref('questions/partie1').push({
+            text: text,
+            answers: answers,
+            correct: correct,
+            createdAt: Date.now()
+        });
+        toast("✅ Question ajoutée !");
+        document.getElementById('q1Text').value = '';
+        document.getElementById('q1A').value = '';
+        document.getElementById('q1B').value = '';
+        document.getElementById('q1C').value = '';
+        document.getElementById('q1D').value = '';
+        loadQuestions('partie1', 'questions1List');
+    } catch(e) { toast("Erreur: " + e.message, true); }
 }
 
 async function addImageQuestion() {
@@ -199,68 +203,69 @@ async function addImageQuestion() {
     if(!text || answers.some(a => !a)) { toast("Remplis tous les champs", true); return; }
     if(!imageFile) { toast("Ajoute une image", true); return; }
     
-    let imageRef = storage.ref(`questions_images/${Date.now()}_${imageFile.name}`);
-    await imageRef.put(imageFile);
-    let imageUrl = await imageRef.getDownloadURL();
-    
-    await db.ref('questions/partie2').push({
-        text: text,
-        answers: answers,
-        correct: correct,
-        image: imageUrl,
-        createdAt: Date.now()
-    });
-    
-    toast("✅ Question image ajoutée !");
-    document.getElementById('q2Text').value = '';
-    document.getElementById('q2A').value = '';
-    document.getElementById('q2B').value = '';
-    document.getElementById('q2C').value = '';
-    document.getElementById('q2D').value = '';
-    document.getElementById('q2Image').value = '';
-    loadQuestions('partie2', 'questions2List');
+    try {
+        let imageRef = storage.ref(`questions_images/${Date.now()}_${imageFile.name}`);
+        await imageRef.put(imageFile);
+        let imageUrl = await imageRef.getDownloadURL();
+        
+        await db.ref('questions/partie2').push({
+            text: text,
+            answers: answers,
+            correct: correct,
+            image: imageUrl,
+            createdAt: Date.now()
+        });
+        toast("✅ Question image ajoutée !");
+        document.getElementById('q2Text').value = '';
+        document.getElementById('q2A').value = '';
+        document.getElementById('q2B').value = '';
+        document.getElementById('q2C').value = '';
+        document.getElementById('q2D').value = '';
+        document.getElementById('q2Image').value = '';
+        loadQuestions('partie2', 'questions2List');
+    } catch(e) { toast("Erreur: " + e.message, true); }
 }
 
 // SUPPRESSION
 window.deleteQuestion = async (mode, id) => {
     if(confirm("Supprimer cette question ?")) {
-        let question = (await db.ref(`questions/${mode}/${id}`).once('value')).val();
-        if(question && question.image) {
-            try {
-                let match = question.image.match(/\/o\/(.+?)\?/);
-                if(match && match[1]) await storage.ref(match[1]).delete();
-            } catch(e) {}
-        }
-        await db.ref(`questions/${mode}/${id}`).remove();
-        toast("✅ Question supprimée !");
-        loadQuestions(mode, mode === 'partie1' ? 'questions1List' : 'questions2List');
+        try {
+            let question = (await db.ref(`questions/${mode}/${id}`).once('value')).val();
+            if(question && question.image) {
+                try {
+                    let match = question.image.match(/\/o\/(.+?)\?/);
+                    if(match && match[1]) await storage.ref(match[1]).delete();
+                } catch(e) {}
+            }
+            await db.ref(`questions/${mode}/${id}`).remove();
+            toast("✅ Question supprimée !");
+            loadQuestions(mode, mode === 'partie1' ? 'questions1List' : 'questions2List');
+        } catch(e) { toast("Erreur: " + e.message, true); }
     }
 };
 
 // SUPPRESSION TOTALE
 async function deleteAllData() {
-    if(confirm("⚠️ SUPPRIMER TOUTES LES DONNÉES ?")) {
-        // Questions
-        let q1 = await db.ref('questions/partie1').once('value');
-        if(q1.val()) for(let k of Object.keys(q1.val())) await db.ref(`questions/partie1/${k}`).remove();
-        
-        let q2 = await db.ref('questions/partie2').once('value');
-        if(q2.val()) for(let k of Object.keys(q2.val())) await db.ref(`questions/partie2/${k}`).remove();
-        
-        // Forum
-        let f = await db.ref('forum').once('value');
-        if(f.val()) for(let k of Object.keys(f.val())) await db.ref(`forum/${k}`).remove();
-        
-        // Salons
-        let r = await db.ref('game_rooms').once('value');
-        if(r.val()) for(let k of Object.keys(r.val())) await db.ref(`game_rooms/${k}`).remove();
-        
-        // Classements
-        let t = await db.ref('teams').once('value');
-        if(t.val()) for(let k of Object.keys(t.val())) await db.ref(`teams/${k}`).remove();
-        
-        toast("✅ TOUTES DONNÉES SUPPRIMÉES !");
-        loadAllQuestions();
+    if(confirm("⚠️ SUPPRIMER TOUTES LES DONNÉES ? Cette action est IRRÉVERSIBLE !")) {
+        try {
+            let q1 = await db.ref('questions/partie1').once('value');
+            if(q1.val()) for(let k of Object.keys(q1.val())) await db.ref(`questions/partie1/${k}`).remove();
+            
+            let q2 = await db.ref('questions/partie2').once('value');
+            if(q2.val()) for(let k of Object.keys(q2.val())) await db.ref(`questions/partie2/${k}`).remove();
+            
+            let f = await db.ref('forum').once('value');
+            if(f.val()) for(let k of Object.keys(f.val())) await db.ref(`forum/${k}`).remove();
+            
+            let r = await db.ref('game_rooms').once('value');
+            if(r.val()) for(let k of Object.keys(r.val())) await db.ref(`game_rooms/${k}`).remove();
+            
+            let t = await db.ref('teams').once('value');
+            if(t.val()) for(let k of Object.keys(t.val())) await db.ref(`teams/${k}`).remove();
+            
+            toast("✅ TOUTES DONNÉES SUPPRIMÉES !");
+            loadAllQuestions();
+        } catch(e) { toast("Erreur: " + e.message, true); }
     }
 }
 </script>
