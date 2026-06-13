@@ -9,7 +9,7 @@
         body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #fff; padding: 20px; }
         .card { background: #1a1a1a; border: 2px solid #ff6600; border-radius: 20px; padding: 25px; margin-bottom: 25px; }
         h1, h2 { color: #ffcc00; margin-bottom: 20px; }
-        input, select, textarea { width: 100%; padding: 10px; background: #0a0a0a; border: 1px solid #ff6600; border-radius: 10px; color: white; margin: 8px 0; }
+        input, select { width: 100%; padding: 10px; background: #0a0a0a; border: 1px solid #ff6600; border-radius: 10px; color: white; margin: 8px 0; }
         button { background: #ff3300; color: #ffcc00; border: none; padding: 10px 20px; border-radius: 30px; cursor: pointer; margin: 5px; font-weight: bold; }
         .btn-green { background: #008800; }
         .btn-red { background: #cc0000; }
@@ -30,20 +30,17 @@
     <input type="password" id="adminPin" class="pin" maxlength="4" placeholder="CODE">
     <button onclick="checkAdminPin()">🔐 ENTRER</button>
     <div id="loginError" style="color:#ff6666; margin-top:10px;"></div>
-    <a href="index.html" style="color:#ffcc00;">← Retour au jeu</a>
+    <a href="index.html" style="color:#ffcc00;">← Retour</a>
 </div>
 
 <div id="adminPanel" style="display:none;">
-    <div class="card">
-        <h1>⚡ PANEL ADMIN ⚡</h1>
-        <button onclick="logoutAdmin()">🚪 DÉCONNEXION</button>
-    </div>
+    <div class="card"><h1>⚡ PANEL ADMIN ⚡</h1><button onclick="logoutAdmin()">🚪 DÉCONNEXION</button></div>
     
     <div class="card">
         <h2>📝 GESTION DES QUESTIONS</h2>
         <div class="tab-buttons">
             <div class="tab-btn active" onclick="showTab('partie1',this)">📝 PARTIE 1 (TEXTE)</div>
-            <div class="tab-btn" onclick="showTab('partie2',this)">🖼️ PARTIE 2 (IMAGES)</div>
+            <div class="tab-btn" onclick="showTab('partie2',this)">🖼️ PARTIE 2 (IMAGE)</div>
         </div>
         
         <div id="tabPartie1" class="tab-content active">
@@ -59,9 +56,10 @@
         </div>
         
         <div id="tabPartie2" class="tab-content">
-            <h3>AJOUTER QUESTION IMAGE</h3>
+            <h3>AJOUTER QUESTION AVEC IMAGE</h3>
+            <p style="color:#ffaa00;">📸 1. Va sur Imgur.com, upload ton image<br>📸 2. Copie le lien direct (clic droit → Copier l'adresse de l'image)<br>📸 3. Colle le lien ci-dessous</p>
             <input type="text" id="q2Text" placeholder="Question">
-            <input type="file" id="q2Image" accept="image/*">
+            <input type="text" id="q2ImageUrl" placeholder="Lien de l'image (Imgur)">
             <input type="text" id="q2A" placeholder="Réponse A">
             <input type="text" id="q2B" placeholder="Réponse B">
             <input type="text" id="q2C" placeholder="Réponse C">
@@ -72,18 +70,13 @@
         </div>
     </div>
     
-    <div class="card">
-        <h2>⚠️ ZONE DANGEREUSE</h2>
-        <button class="btn-red" onclick="deleteAllData()">🗑️ SUPPRIMER TOUTES LES DONNÉES</button>
-    </div>
+    <div class="card"><h2>⚠️ ZONE DANGEREUSE</h2><button class="btn-red" onclick="deleteAllData()">🗑️ SUPPRIMER TOUTES LES DONNÉES</button></div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
 <script>
-// ========== FIREBASE CONFIG ==========
 const firebaseConfig = {
     apiKey: "AIzaSyCIAbgsaNBm2K2NhHzkefT77eOW2wwiBhw",
     authDomain: "joy-purge-game.firebaseapp.com",
@@ -92,13 +85,10 @@ const firebaseConfig = {
     messagingSenderId: "266355310555",
     appId: "1:266355310555:web:5d5296e5b138d4221db1fe"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const storage = firebase.storage();
 const ADMIN_PIN = "2007";
 
-// LOGIN
 function checkAdminPin() {
     let pin = document.getElementById('adminPin').value;
     if(pin === ADMIN_PIN) {
@@ -117,26 +107,17 @@ if(localStorage.getItem('adminLogged') === 'true') {
     loadAllQuestions();
 }
 
-function logoutAdmin() {
-    localStorage.removeItem('adminLogged');
-    location.reload();
-}
-
+function logoutAdmin() { localStorage.removeItem('adminLogged'); location.reload(); }
 function toast(msg) { alert(msg); }
-function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
-
+function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 function showTab(tab, btn) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.getElementById(`tab${tab === 'partie1' ? 'Partie1' : 'Partie2'}`).classList.add('active');
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    document.getElementById(`tab${tab==='partie1'?'Partie1':'Partie2'}`).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
 }
 
-// CHARGEMENT
-async function loadAllQuestions() {
-    await loadQuestions('partie1', 'questions1List');
-    await loadQuestions('partie2', 'questions2List');
-}
+async function loadAllQuestions() { await loadQuestions('partie1','questions1List'); await loadQuestions('partie2','questions2List'); }
 
 async function loadQuestions(mode, containerId) {
     try {
@@ -145,127 +126,63 @@ async function loadQuestions(mode, containerId) {
         snap.forEach(c => questions.push({ id: c.key, ...c.val() }));
         let container = document.getElementById(containerId);
         if(questions.length === 0) { container.innerHTML = '<p>Aucune question</p>'; return; }
-        container.innerHTML = questions.map((q, i) => `
+        container.innerHTML = questions.map((q,i) => `
             <div class="question-item">
                 <b>❓ ${i+1}. ${escapeHtml(q.text)}</b><br>
-                A. ${escapeHtml(q.answers[0])}<br>
-                B. ${escapeHtml(q.answers[1])}<br>
-                C. ${escapeHtml(q.answers[2])}<br>
-                D. ${escapeHtml(q.answers[3])}<br>
-                ✅ Bonne réponse: ${String.fromCharCode(65+q.correct)}
-                <button class="btn-red" onclick="deleteQuestion('${mode}', '${q.id}')">🗑️</button>
+                ${q.image ? `<img src="${q.image}" style="max-width:60px; max-height:50px; border-radius:5px;">` : ''}
+                A. ${escapeHtml(q.answers[0])}<br>B. ${escapeHtml(q.answers[1])}<br>C. ${escapeHtml(q.answers[2])}<br>D. ${escapeHtml(q.answers[3])}<br>
+                ✅ Bonne: ${String.fromCharCode(65+q.correct)}
+                <button class="btn-red" onclick="deleteQuestion('${mode}','${q.id}')">🗑️</button>
             </div>
         `).join('');
     } catch(e) { console.log(e); }
 }
 
-// AJOUT QUESTIONS
 async function addTextQuestion() {
     let text = document.getElementById('q1Text').value.trim();
-    let answers = [
-        document.getElementById('q1A').value.trim(),
-        document.getElementById('q1B').value.trim(),
-        document.getElementById('q1C').value.trim(),
-        document.getElementById('q1D').value.trim()
-    ];
+    let answers = [document.getElementById('q1A').value.trim(), document.getElementById('q1B').value.trim(), document.getElementById('q1C').value.trim(), document.getElementById('q1D').value.trim()];
     let correct = parseInt(document.getElementById('q1Correct').value);
-    
-    if(!text || answers.some(a => !a)) { toast("Remplis tous les champs"); return; }
-    
+    if(!text || answers.some(a=>!a)) { toast("Remplis tous les champs"); return; }
     try {
-        await db.ref('questions/partie1').push({
-            text: text,
-            answers: answers,
-            correct: correct,
-            createdAt: Date.now()
-        });
+        await db.ref('questions/partie1').push({ text, answers, correct, createdAt:Date.now() });
         toast("✅ Question ajoutée !");
-        document.getElementById('q1Text').value = '';
-        document.getElementById('q1A').value = '';
-        document.getElementById('q1B').value = '';
-        document.getElementById('q1C').value = '';
-        document.getElementById('q1D').value = '';
-        loadQuestions('partie1', 'questions1List');
-    } catch(e) { toast("Erreur: " + e.message, true); }
+        document.getElementById('q1Text').value = ''; document.getElementById('q1A').value = ''; document.getElementById('q1B').value = ''; document.getElementById('q1C').value = ''; document.getElementById('q1D').value = '';
+        loadQuestions('partie1','questions1List');
+    } catch(e) { toast("Erreur: "+e.message, true); }
 }
 
 async function addImageQuestion() {
     let text = document.getElementById('q2Text').value.trim();
-    let answers = [
-        document.getElementById('q2A').value.trim(),
-        document.getElementById('q2B').value.trim(),
-        document.getElementById('q2C').value.trim(),
-        document.getElementById('q2D').value.trim()
-    ];
+    let imageUrl = document.getElementById('q2ImageUrl').value.trim();
+    let answers = [document.getElementById('q2A').value.trim(), document.getElementById('q2B').value.trim(), document.getElementById('q2C').value.trim(), document.getElementById('q2D').value.trim()];
     let correct = parseInt(document.getElementById('q2Correct').value);
-    let imageFile = document.getElementById('q2Image').files[0];
-    
-    if(!text || answers.some(a => !a)) { toast("Remplis tous les champs", true); return; }
-    if(!imageFile) { toast("Ajoute une image", true); return; }
-    
+    if(!text || !imageUrl || answers.some(a=>!a)) { toast("Remplis tous les champs (question, lien image, réponses)", true); return; }
     try {
-        let imageRef = storage.ref(`questions_images/${Date.now()}_${imageFile.name}`);
-        await imageRef.put(imageFile);
-        let imageUrl = await imageRef.getDownloadURL();
-        
-        await db.ref('questions/partie2').push({
-            text: text,
-            answers: answers,
-            correct: correct,
-            image: imageUrl,
-            createdAt: Date.now()
-        });
+        await db.ref('questions/partie2').push({ text, image: imageUrl, answers, correct, createdAt:Date.now() });
         toast("✅ Question image ajoutée !");
-        document.getElementById('q2Text').value = '';
-        document.getElementById('q2A').value = '';
-        document.getElementById('q2B').value = '';
-        document.getElementById('q2C').value = '';
-        document.getElementById('q2D').value = '';
-        document.getElementById('q2Image').value = '';
-        loadQuestions('partie2', 'questions2List');
-    } catch(e) { toast("Erreur: " + e.message, true); }
+        document.getElementById('q2Text').value = ''; document.getElementById('q2ImageUrl').value = ''; document.getElementById('q2A').value = ''; document.getElementById('q2B').value = ''; document.getElementById('q2C').value = ''; document.getElementById('q2D').value = '';
+        loadQuestions('partie2','questions2List');
+    } catch(e) { toast("Erreur: "+e.message, true); }
 }
 
-// SUPPRESSION
 window.deleteQuestion = async (mode, id) => {
-    if(confirm("Supprimer cette question ?")) {
-        try {
-            let question = (await db.ref(`questions/${mode}/${id}`).once('value')).val();
-            if(question && question.image) {
-                try {
-                    let match = question.image.match(/\/o\/(.+?)\?/);
-                    if(match && match[1]) await storage.ref(match[1]).delete();
-                } catch(e) {}
-            }
-            await db.ref(`questions/${mode}/${id}`).remove();
-            toast("✅ Question supprimée !");
-            loadQuestions(mode, mode === 'partie1' ? 'questions1List' : 'questions2List');
-        } catch(e) { toast("Erreur: " + e.message, true); }
+    if(confirm("Supprimer ?")) {
+        try { await db.ref(`questions/${mode}/${id}`).remove(); toast("✅ Supprimée !"); loadQuestions(mode, mode==='partie1'?'questions1List':'questions2List'); }
+        catch(e) { toast("Erreur: "+e.message, true); }
     }
 };
 
-// SUPPRESSION TOTALE
 async function deleteAllData() {
-    if(confirm("⚠️ SUPPRIMER TOUTES LES DONNÉES ? Cette action est IRRÉVERSIBLE !")) {
+    if(confirm("⚠️ SUPPRIMER TOUTES LES DONNÉES ?")) {
         try {
-            let q1 = await db.ref('questions/partie1').once('value');
-            if(q1.val()) for(let k of Object.keys(q1.val())) await db.ref(`questions/partie1/${k}`).remove();
-            
-            let q2 = await db.ref('questions/partie2').once('value');
-            if(q2.val()) for(let k of Object.keys(q2.val())) await db.ref(`questions/partie2/${k}`).remove();
-            
-            let f = await db.ref('forum').once('value');
-            if(f.val()) for(let k of Object.keys(f.val())) await db.ref(`forum/${k}`).remove();
-            
-            let r = await db.ref('game_rooms').once('value');
-            if(r.val()) for(let k of Object.keys(r.val())) await db.ref(`game_rooms/${k}`).remove();
-            
-            let t = await db.ref('teams').once('value');
-            if(t.val()) for(let k of Object.keys(t.val())) await db.ref(`teams/${k}`).remove();
-            
+            let q1 = await db.ref('questions/partie1').once('value'); if(q1.val()) for(let k of Object.keys(q1.val())) await db.ref(`questions/partie1/${k}`).remove();
+            let q2 = await db.ref('questions/partie2').once('value'); if(q2.val()) for(let k of Object.keys(q2.val())) await db.ref(`questions/partie2/${k}`).remove();
+            let f = await db.ref('forum').once('value'); if(f.val()) for(let k of Object.keys(f.val())) await db.ref(`forum/${k}`).remove();
+            let r = await db.ref('rooms').once('value'); if(r.val()) for(let k of Object.keys(r.val())) await db.ref(`rooms/${k}`).remove();
+            let t = await db.ref('teams').once('value'); if(t.val()) for(let k of Object.keys(t.val())) await db.ref(`teams/${k}`).remove();
             toast("✅ TOUTES DONNÉES SUPPRIMÉES !");
             loadAllQuestions();
-        } catch(e) { toast("Erreur: " + e.message, true); }
+        } catch(e) { toast("Erreur: "+e.message, true); }
     }
 }
 </script>
