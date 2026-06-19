@@ -21,7 +21,7 @@
         .tab-btn.active { background: #ff3300; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .preview-img { max-width: 100px; max-height: 80px; border-radius: 8px; margin-top: 10px; }
+        .preview-img { max-width: 80px; max-height: 60px; border-radius: 5px; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -62,7 +62,7 @@
 
         <div id="tabPartie2" class="tab-content">
             <h3>AJOUTER QUESTION AVEC IMAGE</h3>
-            <p style="color:#ffaa00;">📸 1. Va sur <strong>https://imgur.com</strong><br>📸 2. Upload ton image<br>📸 3. Copie le lien direct de l'image (.jpg ou .png)<br>📸 4. Colle le lien ci-dessous</p>
+            <p style="color:#ffaa00; font-size:12px;">📸 1. Va sur Imgur.com → upload ton image → copie le lien direct</p>
             <input type="text" id="q2Text" placeholder="Question">
             <input type="text" id="q2ImageUrl" placeholder="Lien de l'image (Imgur)">
             <input type="text" id="q2A" placeholder="Réponse A">
@@ -80,7 +80,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <script>
-// ========== NOUVELLE CONFIGURATION FIREBASE V4 ==========
+// ========== FIREBASE V4 ==========
 const firebaseConfig = {
     apiKey: "AIzaSyAG30Darx6LTAc9XQVYOOEDC6L1AvKeFQA",
     authDomain: "joy-purge-game-v4.firebaseapp.com",
@@ -183,7 +183,7 @@ async function addImageQuestion() {
         document.getElementById('q2D').value.trim()
     ];
     let correct = parseInt(document.getElementById('q2Correct').value);
-    if(!text || !imageUrl || answers.some(a=>!a)) { toast("Remplis tous les champs (question, lien image, réponses)", true); return; }
+    if(!text || !imageUrl || answers.some(a=>!a)) { toast("Remplis tous les champs", true); return; }
     try {
         await db.ref('questions/partie2').push({ text, image: imageUrl, answers, correct, createdAt:Date.now() });
         toast("✅ Question image ajoutée !");
