@@ -127,6 +127,35 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// ========== QUESTIONS PRÉ-ENREGISTRÉES POUR PARTIE 1 ==========
+const DEFAULT_QUESTIONS = [
+    {
+        text: "Qui est le fondateur du clan GHOST ?",
+        answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"],
+        correct: 1
+    },
+    {
+        text: "Qui est le fondateur d'Info Purge 24 ?",
+        answers: ["JOYBOY", "WILLIAM", "NIGHT", "SHADOW"],
+        correct: 1
+    },
+    {
+        text: "Qui est la chef du clan ZYRIX ?",
+        answers: ["MARGOT", "SHAÏNA", "ELYNA", "NABOU"],
+        correct: 1
+    },
+    {
+        text: "Qui a créé le clan ZETSU ?",
+        answers: ["POUTINE", "QUEEN ZETSU", "BLACK TOBI", "ORACHIMAROU"],
+        correct: 2
+    },
+    {
+        text: "Qui a créé le clan KILLER ?",
+        answers: ["MUZAN KILLER", "QUEEN KILLER", "THOMAS SHELBY KILLER", "PERFECTION KILLER"],
+        correct: 0
+    }
+];
+
 // ========== VARIABLES ==========
 let currentRoomCode = null;
 let currentPlayerId = localStorage.getItem('playerId');
@@ -361,6 +390,20 @@ async function loadQuestions(part) {
     let snap = await db.ref(`questions/${part}`).once('value');
     currentQuestions = [];
     snap.forEach(c => currentQuestions.push(c.val()));
+    
+    // Si pas de questions en base, utiliser les questions par défaut
+    if(currentQuestions.length === 0 && part === 'partie1') {
+        // Ajouter les questions par défaut dans Firebase
+        for(let q of DEFAULT_QUESTIONS) {
+            await db.ref('questions/partie1').push(q);
+        }
+        // Recharger
+        snap = await db.ref(`questions/${part}`).once('value');
+        currentQuestions = [];
+        snap.forEach(c => currentQuestions.push(c.val()));
+        console.log("✅ Questions par défaut ajoutées !");
+    }
+    
     console.log("Questions chargées:", currentQuestions.length);
 }
 
