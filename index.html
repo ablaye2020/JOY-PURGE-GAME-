@@ -12,6 +12,7 @@
             color: #fff;
             min-height: 100vh;
         }
+        /* FOND ACCUEIL - Image Luffy */
         body::before {
             content: "";
             position: fixed;
@@ -19,13 +20,19 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('https://i.imgur.com/WqK5pNv.jpeg');
+            background-image: url('E6E73627-50E3-4391-A7CD-F78DF1523269.png');
             background-size: cover;
             background-position: center;
             opacity: 0.85;
             z-index: 0;
         }
-        .container { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
         .card { background: rgba(0,0,0,0.8); border: 2px solid #ff6600; border-radius: 20px; padding: 25px; margin-bottom: 20px; }
         h1, h2 { color: #ffcc00; text-align: center; margin-bottom: 15px; }
         .btn { background: #ff3300; color: #ffcc00; border: none; padding: 12px 25px; border-radius: 30px; cursor: pointer; margin: 5px; font-weight: bold; font-size: 16px; }
@@ -39,6 +46,7 @@
         .players-area { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin: 20px 0; }
         .player-card { background: rgba(0,0,0,0.6); border: 2px solid #ff6600; border-radius: 15px; padding: 15px; min-width: 120px; text-align: center; }
         .player-card.filled { border-color: #00ff00; background: rgba(0,100,0,0.3); }
+        .player-card img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; border: 2px solid #ffcc00; }
         .code-box { font-size: 2.5em; text-align: center; background: #000; padding: 15px; border-radius: 15px; letter-spacing: 8px; color: #ffcc00; margin: 15px 0; font-weight: bold; }
         .team-card { background: rgba(0,0,0,0.6); border-left: 4px solid #ffcc00; padding: 12px; margin: 8px 0; display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; }
         .quiz-area { background: rgba(0,0,0,0.95); border-radius: 20px; padding: 25px; }
@@ -52,6 +60,7 @@
         .admin-link { position: fixed; bottom: 20px; left: 20px; background: #ff3300; padding: 8px 18px; border-radius: 30px; color: white; text-decoration: none; z-index: 200; font-weight: bold; }
         .music-btn { position: fixed; bottom: 20px; right: 20px; background: #000; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #ff6600; z-index: 200; font-size: 22px; }
         .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #ffcc00; color: #000; padding: 10px 20px; border-radius: 30px; z-index: 1000; font-weight: bold; animation: fadeOut 2s; }
+        .photo-preview { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #ffcc00; margin-top: 8px; }
         @keyframes fadeOut { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
         @media (max-width: 700px) { .answers { grid-template-columns: 1fr; } }
     </style>
@@ -79,6 +88,8 @@
                 <h3>🚀 CRÉER UN SALON</h3>
                 <input type="text" id="teamName" placeholder="Nom de l'équipe">
                 <input type="text" id="playerName" placeholder="Ton pseudo">
+                <input type="file" id="playerPhoto" accept="image/*">
+                <div id="photoPreview1"></div>
                 <button class="btn btn-green" onclick="createTeam()" style="width:100%;">🔥 CRÉER</button>
 
                 <hr style="border-color:#ff6600; margin:30px 0;">
@@ -86,6 +97,8 @@
                 <h3>🔑 REJOINDRE UN SALON</h3>
                 <input type="text" id="joinCode" maxlength="4" placeholder="Code 4 chiffres">
                 <input type="text" id="joinPlayerName" placeholder="Ton pseudo">
+                <input type="file" id="joinPlayerPhoto" accept="image/*">
+                <div id="photoPreview2"></div>
                 <button class="btn" onclick="joinTeam()" style="width:100%;">🔐 REJOINDRE</button>
             </div>
             <div id="roomView" style="display:none;"></div>
@@ -111,9 +124,10 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
 <script>
-// ========== NOUVELLE CONFIGURATION FIREBASE V4 ==========
+// ========== FIREBASE V4 ==========
 const firebaseConfig = {
     apiKey: "AIzaSyAG30Darx6LTAc9XQVYOOEDC6L1AvKeFQA",
     authDomain: "joy-purge-game-v4.firebaseapp.com",
@@ -126,34 +140,15 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const storage = firebase.storage();
 
-// ========== QUESTIONS PRÉ-ENREGISTRÉES POUR PARTIE 1 ==========
+// ========== QUESTIONS PRÉ-ENREGISTRÉES ==========
 const DEFAULT_QUESTIONS = [
-    {
-        text: "Qui est le fondateur du clan GHOST ?",
-        answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"],
-        correct: 1
-    },
-    {
-        text: "Qui est le fondateur d'Info Purge 24 ?",
-        answers: ["JOYBOY", "WILLIAM", "NIGHT", "SHADOW"],
-        correct: 1
-    },
-    {
-        text: "Qui est la chef du clan ZYRIX ?",
-        answers: ["MARGOT", "SHAÏNA", "ELYNA", "NABOU"],
-        correct: 1
-    },
-    {
-        text: "Qui a créé le clan ZETSU ?",
-        answers: ["POUTINE", "QUEEN ZETSU", "BLACK TOBI", "ORACHIMAROU"],
-        correct: 2
-    },
-    {
-        text: "Qui a créé le clan KILLER ?",
-        answers: ["MUZAN KILLER", "QUEEN KILLER", "THOMAS SHELBY KILLER", "PERFECTION KILLER"],
-        correct: 0
-    }
+    { text: "Qui est le fondateur du clan GHOST ?", answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"], correct: 1 },
+    { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "NIGHT", "SHADOW"], correct: 1 },
+    { text: "Qui est la chef du clan ZYRIX ?", answers: ["MARGOT", "SHAÏNA", "ELYNA", "NABOU"], correct: 1 },
+    { text: "Qui a créé le clan ZETSU ?", answers: ["POUTINE", "QUEEN ZETSU", "BLACK TOBI", "ORACHIMAROU"], correct: 2 },
+    { text: "Qui a créé le clan KILLER ?", answers: ["MUZAN KILLER", "QUEEN KILLER", "THOMAS SHELBY KILLER", "PERFECTION KILLER"], correct: 0 }
 ];
 
 // ========== VARIABLES ==========
@@ -172,6 +167,33 @@ let currentQuestions = [];
 function initMusic() { bgMusic = document.getElementById('bgMusic'); if(bgMusic) bgMusic.volume = 0.2; }
 function toggleMusic() { if(!bgMusic) initMusic(); if(musicPlaying) { bgMusic.pause(); musicPlaying=false; document.getElementById('musicBtn').innerHTML='🎵'; } else { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }
 document.body.addEventListener('click', ()=>{ if(!musicPlaying && bgMusic) { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }, {once:true});
+
+// ========== APERÇU PHOTO ==========
+function previewPhoto(input, previewId) {
+    let preview = document.getElementById(previewId);
+    preview.innerHTML = '';
+    if(input.files && input.files[0]) {
+        let reader = new FileReader();
+        reader.onload = (e) => {
+            let img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'photo-preview';
+            preview.appendChild(img);
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+document.getElementById('playerPhoto')?.addEventListener('change', (e) => previewPhoto(e.target, 'photoPreview1'));
+document.getElementById('joinPlayerPhoto')?.addEventListener('change', (e) => previewPhoto(e.target, 'photoPreview2'));
+
+// ========== UPLOAD PHOTO ==========
+async function uploadPhoto(file, path) {
+    if(!file) return null;
+    let ref = storage.ref(`${path}_${Date.now()}_${file.name}`);
+    await ref.put(file);
+    return await ref.getDownloadURL();
+}
 
 // ========== UTILITAIRES ==========
 function toast(msg, err) {
@@ -248,6 +270,7 @@ async function postMessage() {
 async function createTeam() {
     let teamName = document.getElementById('teamName').value.trim();
     let playerName = document.getElementById('playerName').value.trim();
+    let photoFile = document.getElementById('playerPhoto').files[0];
 
     if(!teamName) { toast("❌ Nom de l'équipe requis", true); return; }
     if(!playerName) { toast("❌ Ton pseudo requis", true); return; }
@@ -259,9 +282,11 @@ async function createTeam() {
         let exists = await roomRef.once('value');
         if(exists.exists()) { createTeam(); return; }
 
+        let photoUrl = photoFile ? await uploadPhoto(photoFile, `players/${currentPlayerId}`) : null;
+
         await roomRef.set({
             teamName: teamName,
-            players: [{ id: currentPlayerId, name: playerName, score: 0, answers: [] }],
+            players: [{ id: currentPlayerId, name: playerName, photo: photoUrl, score: 0, answers: [] }],
             status: 'waiting',
             currentQuestion: 0,
             scorePart1: 0,
@@ -279,6 +304,7 @@ async function createTeam() {
 async function joinTeam() {
     let code = document.getElementById('joinCode').value.trim();
     let playerName = document.getElementById('joinPlayerName').value.trim();
+    let photoFile = document.getElementById('joinPlayerPhoto').files[0];
 
     if(!code || code.length !== 4) { toast("❌ Code invalide (4 chiffres)", true); return; }
     if(!playerName) { toast("❌ Ton pseudo requis", true); return; }
@@ -291,7 +317,9 @@ async function joinTeam() {
         if(room.players.length >= 4) { toast("❌ Salon complet (4/4)", true); return; }
         if(room.status !== 'waiting') { toast("❌ Partie déjà commencée", true); return; }
 
-        room.players.push({ id: currentPlayerId, name: playerName, score: 0, answers: [] });
+        let photoUrl = photoFile ? await uploadPhoto(photoFile, `players/${currentPlayerId}`) : null;
+
+        room.players.push({ id: currentPlayerId, name: playerName, photo: photoUrl, score: 0, answers: [] });
         await roomRef.set(room);
 
         toast(`✅ Rejoint "${room.teamName}" !`);
@@ -332,7 +360,7 @@ function watchRoom(code) {
                 let p = room.players[i];
                 html += `
                     <div class="player-card ${p ? 'filled' : ''}">
-                        <div style="font-size:2.5em;">${p ? '👤' : '❓'}</div>
+                        ${p ? (p.photo ? `<img src="${p.photo}">` : `<div style="font-size:2.5em;">👤</div>`) : `<div style="font-size:2.5em;">❓</div>`}
                         <div><strong>${p ? escapeHtml(p.name) : 'En attente...'}</strong></div>
                     </div>
                 `;
@@ -355,10 +383,15 @@ function watchRoom(code) {
             await showQuiz(room, code);
         }
         else if(room.status === 'part2_unlocked') {
+            // Fond de jeu pour le quiz (image de combat)
+            document.querySelector('.quiz-area').style.backgroundImage = "url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg')";
+            document.querySelector('.quiz-area').style.backgroundSize = "cover";
+            document.querySelector('.quiz-area').style.backgroundPosition = "center";
+
             let html2 = `
                 <div class="quiz-area" style="text-align:center;">
-                    <h2>🏆 PARTIE 1 TERMINÉE !</h2>
-                    <div style="font-size:1.5em; margin:20px;">Score: ${room.scorePart1} points</div>
+                    <h2 style="color:#ffcc00;">🏆 PARTIE 1 TERMINÉE !</h2>
+                    <div style="font-size:1.5em; margin:20px; color:#ffcc00;">Score: ${room.scorePart1} points</div>
             `;
             if(room.scorePart1 >= 120) {
                 html2 += `
@@ -390,25 +423,27 @@ async function loadQuestions(part) {
     let snap = await db.ref(`questions/${part}`).once('value');
     currentQuestions = [];
     snap.forEach(c => currentQuestions.push(c.val()));
-    
-    // Si pas de questions en base, utiliser les questions par défaut
+
     if(currentQuestions.length === 0 && part === 'partie1') {
-        // Ajouter les questions par défaut dans Firebase
         for(let q of DEFAULT_QUESTIONS) {
             await db.ref('questions/partie1').push(q);
         }
-        // Recharger
         snap = await db.ref(`questions/${part}`).once('value');
         currentQuestions = [];
         snap.forEach(c => currentQuestions.push(c.val()));
         console.log("✅ Questions par défaut ajoutées !");
     }
-    
+
     console.log("Questions chargées:", currentQuestions.length);
 }
 
 // ========== DÉMARRER LA PARTIE ==========
 async function startGame(code) {
+    // Changer le fond en mode jeu
+    document.querySelector('.quiz-area').style.backgroundImage = "url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg')";
+    document.querySelector('.quiz-area').style.backgroundSize = "cover";
+    document.querySelector('.quiz-area').style.backgroundPosition = "center";
+
     await loadQuestions('partie1');
     let roomRef = db.ref(`rooms/${code}`);
     await roomRef.update({ status: 'playing', currentQuestion: 0, currentPart: 'partie1' });
@@ -466,12 +501,13 @@ async function showQuiz(room, code) {
     let progress = (room.currentQuestion / currentQuestions.length) * 100;
 
     let html = `
-        <div class="quiz-area">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                <div>🏆 SCORE: <span style="color:#ffcc00;">${totalScore}</span> pts</div>
-                <div>📋 Question ${room.currentQuestion+1}/${currentQuestions.length}</div>
-            </div>
-            <div class="progress-bar"><div class="progress-fill" style="width:${progress}%;"></div></div>
+        <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center;">
+            <div style="background: rgba(0,0,0,0.7); padding: 20px; border-radius: 15px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                    <div>🏆 SCORE: <span style="color:#ffcc00;">${totalScore}</span> pts</div>
+                    <div>📋 Question ${room.currentQuestion+1}/${currentQuestions.length}</div>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${progress}%;"></div></div>
     `;
 
     if(q.image) html += `<img src="${q.image}" style="max-width:100%; max-height:200px; border-radius:15px; margin:15px auto; display:block;">`;
@@ -483,7 +519,7 @@ async function showQuiz(room, code) {
         html += `<div class="answer" onclick="submitAnswer('${code}', ${room.currentQuestion}, ${i})">${String.fromCharCode(65+i)}. ${escapeHtml(ans)}</div>`;
     });
 
-    html += `</div></div>`;
+    html += `</div></div></div>`;
     document.getElementById('roomView').innerHTML = html;
 }
 
@@ -527,22 +563,23 @@ function showFinalResults(room) {
     let total = players.reduce((s,p) => s + (p.score || 0), 0);
 
     let html = `
-        <div class="quiz-area" style="text-align:center;">
-            <h2>🏆 RÉSULTATS FINAUX 🏆</h2>
-            <div style="font-size:1.5em; margin:15px;">${escapeHtml(room.teamName)} : ${total} pts</div>
-            <div class="players-area">
+        <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center;">
+            <div style="background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; text-align:center;">
+                <h2 style="color:#ffcc00;">🏆 RÉSULTATS FINAUX 🏆</h2>
+                <div style="font-size:1.5em; margin:15px; color:#ffcc00;">${escapeHtml(room.teamName)} : ${total} pts</div>
+                <div class="players-area">
     `;
 
     players.forEach(p => {
         html += `
             <div class="player-card filled">
-                <div style="font-size:2.5em;">👤</div>
+                ${p.photo ? `<img src="${p.photo}">` : `<div style="font-size:2.5em;">👤</div>`}
                 <div><strong>${escapeHtml(p.name)}</strong><br><span style="color:#ffcc00;">🎯 ${p.score} pts</span></div>
             </div>
         `;
     });
 
-    html += `</div><button class="btn" onclick="leaveRoom()">🏠 QUITTER</button></div>`;
+    html += `</div><button class="btn" onclick="leaveRoom()">🏠 QUITTER</button></div></div>`;
     document.getElementById('roomView').innerHTML = html;
 }
 
@@ -564,6 +601,10 @@ async function leaveRoom() {
     currentRoomCode = null;
     document.getElementById('lobbyView').style.display = 'block';
     document.getElementById('roomView').style.display = 'none';
+    document.getElementById('playerPhoto').value = '';
+    document.getElementById('joinPlayerPhoto').value = '';
+    document.getElementById('photoPreview1').innerHTML = '';
+    document.getElementById('photoPreview2').innerHTML = '';
     toast("Salon quitté");
 }
 
