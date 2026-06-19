@@ -16,11 +16,12 @@
         .question-item { background: #0a0a0a; border-left: 4px solid #ffcc00; padding: 15px; margin: 10px 0; border-radius: 10px; }
         .login-box { max-width: 400px; margin: 100px auto; text-align: center; }
         .pin { font-size: 1.5em; text-align: center; letter-spacing: 5px; }
-        .tab-buttons { display: flex; gap: 15px; margin-bottom: 20px; }
+        .tab-buttons { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
         .tab-btn { background: #333; padding: 8px 20px; border-radius: 30px; cursor: pointer; }
         .tab-btn.active { background: #ff3300; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        .preview-img { max-width: 100px; max-height: 80px; border-radius: 8px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -34,15 +35,19 @@
 </div>
 
 <div id="adminPanel" style="display:none;">
-    <div class="card"><h1>⚡ PANEL ADMIN ⚡</h1><button onclick="logoutAdmin()">🚪 DÉCONNEXION</button></div>
-    
+    <div class="card">
+        <h1>⚡ PANEL ADMIN ⚡</h1>
+        <button onclick="logoutAdmin()">🚪 DÉCONNEXION</button>
+        <button class="btn-red" onclick="deleteAllData()">🗑️ TOUT SUPPRIMER</button>
+    </div>
+
     <div class="card">
         <h2>📝 GESTION DES QUESTIONS</h2>
         <div class="tab-buttons">
             <div class="tab-btn active" onclick="showTab('partie1',this)">📝 PARTIE 1 (TEXTE)</div>
             <div class="tab-btn" onclick="showTab('partie2',this)">🖼️ PARTIE 2 (IMAGE)</div>
         </div>
-        
+
         <div id="tabPartie1" class="tab-content active">
             <h3>AJOUTER QUESTION TEXTE</h3>
             <input type="text" id="q1Text" placeholder="Question">
@@ -54,10 +59,10 @@
             <button class="btn-green" onclick="addTextQuestion()">➕ AJOUTER</button>
             <div id="questions1List">Chargement...</div>
         </div>
-        
+
         <div id="tabPartie2" class="tab-content">
             <h3>AJOUTER QUESTION AVEC IMAGE</h3>
-            <p style="color:#ffaa00;">📸 1. Va sur Imgur.com, upload ton image<br>📸 2. Copie le lien direct (clic droit → Copier l'adresse de l'image)<br>📸 3. Colle le lien ci-dessous</p>
+            <p style="color:#ffaa00;">📸 1. Va sur <strong>https://imgur.com</strong><br>📸 2. Upload ton image<br>📸 3. Copie le lien direct de l'image (.jpg ou .png)<br>📸 4. Colle le lien ci-dessous</p>
             <input type="text" id="q2Text" placeholder="Question">
             <input type="text" id="q2ImageUrl" placeholder="Lien de l'image (Imgur)">
             <input type="text" id="q2A" placeholder="Réponse A">
@@ -69,22 +74,23 @@
             <div id="questions2List">Chargement...</div>
         </div>
     </div>
-    
-    <div class="card"><h2>⚠️ ZONE DANGEREUSE</h2><button class="btn-red" onclick="deleteAllData()">🗑️ SUPPRIMER TOUTES LES DONNÉES</button></div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <script>
+// ========== NOUVELLE CONFIGURATION FIREBASE V4 ==========
 const firebaseConfig = {
-    apiKey: "AIzaSyCIAbgsaNBm2K2NhHzkefT77eOW2wwiBhw",
-    authDomain: "joy-purge-game.firebaseapp.com",
-    projectId: "joy-purge-game",
-    storageBucket: "joy-purge-game.firebasestorage.app",
-    messagingSenderId: "266355310555",
-    appId: "1:266355310555:web:5d5296e5b138d4221db1fe"
+    apiKey: "AIzaSyAG30Darx6LTAc9XQVYOOEDC6L1AvKeFQA",
+    authDomain: "joy-purge-game-v4.firebaseapp.com",
+    databaseURL: "https://joy-purge-game-v4-default-rtdb.firebaseio.com",
+    projectId: "joy-purge-game-v4",
+    storageBucket: "joy-purge-game-v4.firebasestorage.app",
+    messagingSenderId: "755752838683",
+    appId: "1:755752838683:web:1899003609bb486871fabe"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const ADMIN_PIN = "2007";
@@ -110,6 +116,7 @@ if(localStorage.getItem('adminLogged') === 'true') {
 function logoutAdmin() { localStorage.removeItem('adminLogged'); location.reload(); }
 function toast(msg) { alert(msg); }
 function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+
 function showTab(tab, btn) {
     document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
     document.getElementById(`tab${tab==='partie1'?'Partie1':'Partie2'}`).classList.add('active');
@@ -117,7 +124,10 @@ function showTab(tab, btn) {
     btn.classList.add('active');
 }
 
-async function loadAllQuestions() { await loadQuestions('partie1','questions1List'); await loadQuestions('partie2','questions2List'); }
+async function loadAllQuestions() {
+    await loadQuestions('partie1','questions1List');
+    await loadQuestions('partie2','questions2List');
+}
 
 async function loadQuestions(mode, containerId) {
     try {
@@ -129,8 +139,11 @@ async function loadQuestions(mode, containerId) {
         container.innerHTML = questions.map((q,i) => `
             <div class="question-item">
                 <b>❓ ${i+1}. ${escapeHtml(q.text)}</b><br>
-                ${q.image ? `<img src="${q.image}" style="max-width:60px; max-height:50px; border-radius:5px;">` : ''}
-                A. ${escapeHtml(q.answers[0])}<br>B. ${escapeHtml(q.answers[1])}<br>C. ${escapeHtml(q.answers[2])}<br>D. ${escapeHtml(q.answers[3])}<br>
+                ${q.image ? `<img src="${q.image}" class="preview-img">` : ''}
+                A. ${escapeHtml(q.answers[0])}<br>
+                B. ${escapeHtml(q.answers[1])}<br>
+                C. ${escapeHtml(q.answers[2])}<br>
+                D. ${escapeHtml(q.answers[3])}<br>
                 ✅ Bonne: ${String.fromCharCode(65+q.correct)}
                 <button class="btn-red" onclick="deleteQuestion('${mode}','${q.id}')">🗑️</button>
             </div>
@@ -140,13 +153,22 @@ async function loadQuestions(mode, containerId) {
 
 async function addTextQuestion() {
     let text = document.getElementById('q1Text').value.trim();
-    let answers = [document.getElementById('q1A').value.trim(), document.getElementById('q1B').value.trim(), document.getElementById('q1C').value.trim(), document.getElementById('q1D').value.trim()];
+    let answers = [
+        document.getElementById('q1A').value.trim(),
+        document.getElementById('q1B').value.trim(),
+        document.getElementById('q1C').value.trim(),
+        document.getElementById('q1D').value.trim()
+    ];
     let correct = parseInt(document.getElementById('q1Correct').value);
     if(!text || answers.some(a=>!a)) { toast("Remplis tous les champs"); return; }
     try {
         await db.ref('questions/partie1').push({ text, answers, correct, createdAt:Date.now() });
         toast("✅ Question ajoutée !");
-        document.getElementById('q1Text').value = ''; document.getElementById('q1A').value = ''; document.getElementById('q1B').value = ''; document.getElementById('q1C').value = ''; document.getElementById('q1D').value = '';
+        document.getElementById('q1Text').value = '';
+        document.getElementById('q1A').value = '';
+        document.getElementById('q1B').value = '';
+        document.getElementById('q1C').value = '';
+        document.getElementById('q1D').value = '';
         loadQuestions('partie1','questions1List');
     } catch(e) { toast("Erreur: "+e.message, true); }
 }
@@ -154,13 +176,23 @@ async function addTextQuestion() {
 async function addImageQuestion() {
     let text = document.getElementById('q2Text').value.trim();
     let imageUrl = document.getElementById('q2ImageUrl').value.trim();
-    let answers = [document.getElementById('q2A').value.trim(), document.getElementById('q2B').value.trim(), document.getElementById('q2C').value.trim(), document.getElementById('q2D').value.trim()];
+    let answers = [
+        document.getElementById('q2A').value.trim(),
+        document.getElementById('q2B').value.trim(),
+        document.getElementById('q2C').value.trim(),
+        document.getElementById('q2D').value.trim()
+    ];
     let correct = parseInt(document.getElementById('q2Correct').value);
     if(!text || !imageUrl || answers.some(a=>!a)) { toast("Remplis tous les champs (question, lien image, réponses)", true); return; }
     try {
         await db.ref('questions/partie2').push({ text, image: imageUrl, answers, correct, createdAt:Date.now() });
         toast("✅ Question image ajoutée !");
-        document.getElementById('q2Text').value = ''; document.getElementById('q2ImageUrl').value = ''; document.getElementById('q2A').value = ''; document.getElementById('q2B').value = ''; document.getElementById('q2C').value = ''; document.getElementById('q2D').value = '';
+        document.getElementById('q2Text').value = '';
+        document.getElementById('q2ImageUrl').value = '';
+        document.getElementById('q2A').value = '';
+        document.getElementById('q2B').value = '';
+        document.getElementById('q2C').value = '';
+        document.getElementById('q2D').value = '';
         loadQuestions('partie2','questions2List');
     } catch(e) { toast("Erreur: "+e.message, true); }
 }
@@ -175,11 +207,21 @@ window.deleteQuestion = async (mode, id) => {
 async function deleteAllData() {
     if(confirm("⚠️ SUPPRIMER TOUTES LES DONNÉES ?")) {
         try {
-            let q1 = await db.ref('questions/partie1').once('value'); if(q1.val()) for(let k of Object.keys(q1.val())) await db.ref(`questions/partie1/${k}`).remove();
-            let q2 = await db.ref('questions/partie2').once('value'); if(q2.val()) for(let k of Object.keys(q2.val())) await db.ref(`questions/partie2/${k}`).remove();
-            let f = await db.ref('forum').once('value'); if(f.val()) for(let k of Object.keys(f.val())) await db.ref(`forum/${k}`).remove();
-            let r = await db.ref('rooms').once('value'); if(r.val()) for(let k of Object.keys(r.val())) await db.ref(`rooms/${k}`).remove();
-            let t = await db.ref('teams').once('value'); if(t.val()) for(let k of Object.keys(t.val())) await db.ref(`teams/${k}`).remove();
+            let q1 = await db.ref('questions/partie1').once('value');
+            if(q1.val()) for(let k of Object.keys(q1.val())) await db.ref(`questions/partie1/${k}`).remove();
+
+            let q2 = await db.ref('questions/partie2').once('value');
+            if(q2.val()) for(let k of Object.keys(q2.val())) await db.ref(`questions/partie2/${k}`).remove();
+
+            let f = await db.ref('forum').once('value');
+            if(f.val()) for(let k of Object.keys(f.val())) await db.ref(`forum/${k}`).remove();
+
+            let r = await db.ref('rooms').once('value');
+            if(r.val()) for(let k of Object.keys(r.val())) await db.ref(`rooms/${k}`).remove();
+
+            let t = await db.ref('teams').once('value');
+            if(t.val()) for(let k of Object.keys(t.val())) await db.ref(`teams/${k}`).remove();
+
             toast("✅ TOUTES DONNÉES SUPPRIMÉES !");
             loadAllQuestions();
         } catch(e) { toast("Erreur: "+e.message, true); }
