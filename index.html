@@ -12,7 +12,6 @@
             color: #fff;
             min-height: 100vh;
         }
-        /* FOND ACCUEIL - Image Luffy */
         body::before {
             content: "";
             position: fixed;
@@ -26,13 +25,7 @@
             opacity: 0.85;
             z-index: 0;
         }
-        .container {
-            position: relative;
-            z-index: 1;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+        .container { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 20px; }
         .card { background: rgba(0,0,0,0.8); border: 2px solid #ff6600; border-radius: 20px; padding: 25px; margin-bottom: 20px; }
         h1, h2 { color: #ffcc00; text-align: center; margin-bottom: 15px; }
         .btn { background: #ff3300; color: #ffcc00; border: none; padding: 12px 25px; border-radius: 30px; cursor: pointer; margin: 5px; font-weight: bold; font-size: 16px; }
@@ -190,9 +183,14 @@ document.getElementById('joinPlayerPhoto')?.addEventListener('change', (e) => pr
 // ========== UPLOAD PHOTO ==========
 async function uploadPhoto(file, path) {
     if(!file) return null;
-    let ref = storage.ref(`${path}_${Date.now()}_${file.name}`);
-    await ref.put(file);
-    return await ref.getDownloadURL();
+    try {
+        let ref = storage.ref(`${path}_${Date.now()}_${file.name}`);
+        await ref.put(file);
+        return await ref.getDownloadURL();
+    } catch(e) {
+        console.log("Erreur upload photo:", e);
+        return null;
+    }
 }
 
 // ========== UTILITAIRES ==========
@@ -203,7 +201,7 @@ function toast(msg, err) {
     t.style.color = err ? '#fff' : '#000';
     t.innerText = msg;
     document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2000);
+    setTimeout(() => t.remove(), 2500);
 }
 
 function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
@@ -342,7 +340,11 @@ function watchRoom(code) {
     let roomRef = db.ref(`rooms/${code}`);
     roomListener = roomRef.on('value', async (snap) => {
         let room = snap.val();
-        if(!room) { leaveRoom(); return; }
+        if(!room) { 
+            toast("Salon fermé", true);
+            leaveRoom(); 
+            return; 
+        }
 
         let isHost = room.players[0]?.id === currentPlayerId;
         let playerCount = room.players.length;
@@ -383,15 +385,11 @@ function watchRoom(code) {
             await showQuiz(room, code);
         }
         else if(room.status === 'part2_unlocked') {
-            // Fond de jeu pour le quiz (image de combat)
-            document.querySelector('.quiz-area').style.backgroundImage = "url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg')";
-            document.querySelector('.quiz-area').style.backgroundSize = "cover";
-            document.querySelector('.quiz-area').style.backgroundPosition = "center";
-
             let html2 = `
-                <div class="quiz-area" style="text-align:center;">
-                    <h2 style="color:#ffcc00;">🏆 PARTIE 1 TERMINÉE !</h2>
-                    <div style="font-size:1.5em; margin:20px; color:#ffcc00;">Score: ${room.scorePart1} points</div>
+                <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center; text-align:center;">
+                    <div style="background: rgba(0,0,0,0.7); padding: 20px; border-radius: 15px;">
+                        <h2 style="color:#ffcc00;">🏆 PARTIE 1 TERMINÉE !</h2>
+                        <div style="font-size:1.5em; margin:20px; color:#ffcc00;">Score: ${room.scorePart1} points</div>
             `;
             if(room.scorePart1 >= 120) {
                 html2 += `
@@ -404,7 +402,7 @@ function watchRoom(code) {
                     <button class="btn" onclick="leaveRoom()">🏠 QUITTER</button>
                 `;
             }
-            html2 += `</div>`;
+            html2 += `</div></div>`;
             document.getElementById('roomView').innerHTML = html2;
         }
         else if(room.status === 'finished') {
@@ -431,19 +429,11 @@ async function loadQuestions(part) {
         snap = await db.ref(`questions/${part}`).once('value');
         currentQuestions = [];
         snap.forEach(c => currentQuestions.push(c.val()));
-        console.log("✅ Questions par défaut ajoutées !");
     }
-
-    console.log("Questions chargées:", currentQuestions.length);
 }
 
 // ========== DÉMARRER LA PARTIE ==========
 async function startGame(code) {
-    // Changer le fond en mode jeu
-    document.querySelector('.quiz-area').style.backgroundImage = "url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg')";
-    document.querySelector('.quiz-area').style.backgroundSize = "cover";
-    document.querySelector('.quiz-area').style.backgroundPosition = "center";
-
     await loadQuestions('partie1');
     let roomRef = db.ref(`rooms/${code}`);
     await roomRef.update({ status: 'playing', currentQuestion: 0, currentPart: 'partie1' });
