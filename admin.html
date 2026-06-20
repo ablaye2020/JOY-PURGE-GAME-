@@ -22,6 +22,7 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .preview-img { max-width: 80px; max-height: 60px; border-radius: 5px; margin-top: 5px; }
+        .question-count { color: #ffaa00; font-size: 0.9em; margin-left: 10px; }
     </style>
 </head>
 <body>
@@ -39,13 +40,14 @@
         <h1>⚡ PANEL ADMIN ⚡</h1>
         <button onclick="logoutAdmin()">🚪 DÉCONNEXION</button>
         <button class="btn-red" onclick="deleteAllData()">🗑️ TOUT SUPPRIMER</button>
+        <button class="btn" onclick="loadAllQuestions()" style="background:#0066cc;">🔄 RAFRAÎCHIR</button>
     </div>
 
     <div class="card">
         <h2>📝 GESTION DES QUESTIONS</h2>
         <div class="tab-buttons">
-            <div class="tab-btn active" onclick="showTab('partie1',this)">📝 PARTIE 1 (TEXTE)</div>
-            <div class="tab-btn" onclick="showTab('partie2',this)">🖼️ PARTIE 2 (IMAGE)</div>
+            <div class="tab-btn active" onclick="showTab('partie1',this)">📝 PARTIE 1 (TEXTE) <span id="count1" class="question-count">(0)</span></div>
+            <div class="tab-btn" onclick="showTab('partie2',this)">🖼️ PARTIE 2 (IMAGE) <span id="count2" class="question-count">(0)</span></div>
         </div>
 
         <div id="tabPartie1" class="tab-content active">
@@ -55,9 +57,14 @@
             <input type="text" id="q1B" placeholder="Réponse B">
             <input type="text" id="q1C" placeholder="Réponse C">
             <input type="text" id="q1D" placeholder="Réponse D">
-            <select id="q1Correct"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select>
+            <select id="q1Correct">
+                <option value="0">A</option>
+                <option value="1">B</option>
+                <option value="2">C</option>
+                <option value="3">D</option>
+            </select>
             <button class="btn-green" onclick="addTextQuestion()">➕ AJOUTER</button>
-            <div id="questions1List">Chargement...</div>
+            <div id="questions1List">⏳ Chargement...</div>
         </div>
 
         <div id="tabPartie2" class="tab-content">
@@ -69,9 +76,14 @@
             <input type="text" id="q2B" placeholder="Réponse B">
             <input type="text" id="q2C" placeholder="Réponse C">
             <input type="text" id="q2D" placeholder="Réponse D">
-            <select id="q2Correct"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select>
+            <select id="q2Correct">
+                <option value="0">A</option>
+                <option value="1">B</option>
+                <option value="2">C</option>
+                <option value="3">D</option>
+            </select>
             <button class="btn-green" onclick="addImageQuestion()">➕ AJOUTER</button>
-            <div id="questions2List">Chargement...</div>
+            <div id="questions2List">⏳ Chargement...</div>
         </div>
     </div>
 </div>
@@ -123,18 +135,28 @@ function showTab(tab, btn) {
     btn.classList.add('active');
 }
 
+// ========== CHARGER TOUTES LES QUESTIONS ==========
 async function loadAllQuestions() {
-    await loadQuestions('partie1','questions1List');
-    await loadQuestions('partie2','questions2List');
+    await loadQuestions('partie1', 'questions1List', 'count1');
+    await loadQuestions('partie2', 'questions2List', 'count2');
 }
 
-async function loadQuestions(mode, containerId) {
+async function loadQuestions(mode, containerId, countId) {
     try {
         let snap = await db.ref(`questions/${mode}`).once('value');
         let questions = [];
         snap.forEach(c => questions.push({ id: c.key, ...c.val() }));
+        
         let container = document.getElementById(containerId);
-        if(questions.length === 0) { container.innerHTML = '<p>Aucune question</p>'; return; }
+        let countEl = document.getElementById(countId);
+        
+        if(countEl) countEl.textContent = `(${questions.length})`;
+        
+        if(questions.length === 0) { 
+            container.innerHTML = '<p>Aucune question</p>'; 
+            return; 
+        }
+        
         container.innerHTML = questions.map((q,i) => `
             <div class="question-item">
                 <b>❓ ${i+1}. ${escapeHtml(q.text)}</b><br>
@@ -147,9 +169,13 @@ async function loadQuestions(mode, containerId) {
                 <button class="btn-red" onclick="deleteQuestion('${mode}','${q.id}')">🗑️</button>
             </div>
         `).join('');
-    } catch(e) { console.log(e); }
+    } catch(e) { 
+        console.log(e); 
+        document.getElementById(containerId).innerHTML = '<p>❌ Erreur de chargement</p>';
+    }
 }
 
+// ========== AJOUTER QUESTION TEXTE ==========
 async function addTextQuestion() {
     let text = document.getElementById('q1Text').value.trim();
     let answers = [
@@ -159,19 +185,38 @@ async function addTextQuestion() {
         document.getElementById('q1D').value.trim()
     ];
     let correct = parseInt(document.getElementById('q1Correct').value);
-    if(!text || answers.some(a=>!a)) { toast("Remplis tous les champs"); return; }
+    
+    if(!text || answers.some(a=>!a)) { 
+        toast("❌ Remplis tous les champs"); 
+        return; 
+    }
+    
     try {
-        await db.ref('questions/partie1').push({ text, answers, correct, createdAt:Date.now() });
+        await db.ref('questions/partie1').push({ 
+            text, 
+            answers, 
+            correct, 
+            createdAt: Date.now() 
+        });
+        
         toast("✅ Question ajoutée !");
+        
+        // Réinitialiser les champs
         document.getElementById('q1Text').value = '';
         document.getElementById('q1A').value = '';
         document.getElementById('q1B').value = '';
         document.getElementById('q1C').value = '';
         document.getElementById('q1D').value = '';
-        loadQuestions('partie1','questions1List');
-    } catch(e) { toast("Erreur: "+e.message, true); }
+        
+        // 🔥 RECHARGER IMMÉDIATEMENT LA LISTE
+        await loadQuestions('partie1', 'questions1List', 'count1');
+        
+    } catch(e) { 
+        toast("❌ Erreur: " + e.message, true); 
+    }
 }
 
+// ========== AJOUTER QUESTION IMAGE ==========
 async function addImageQuestion() {
     let text = document.getElementById('q2Text').value.trim();
     let imageUrl = document.getElementById('q2ImageUrl').value.trim();
@@ -182,50 +227,94 @@ async function addImageQuestion() {
         document.getElementById('q2D').value.trim()
     ];
     let correct = parseInt(document.getElementById('q2Correct').value);
-    if(!text || !imageUrl || answers.some(a=>!a)) { toast("Remplis tous les champs", true); return; }
+    
+    if(!text || !imageUrl || answers.some(a=>!a)) { 
+        toast("❌ Remplis tous les champs (question, lien image, réponses)", true); 
+        return; 
+    }
+    
     try {
-        await db.ref('questions/partie2').push({ text, image: imageUrl, answers, correct, createdAt:Date.now() });
+        await db.ref('questions/partie2').push({ 
+            text, 
+            image: imageUrl, 
+            answers, 
+            correct, 
+            createdAt: Date.now() 
+        });
+        
         toast("✅ Question image ajoutée !");
+        
+        // Réinitialiser les champs
         document.getElementById('q2Text').value = '';
         document.getElementById('q2ImageUrl').value = '';
         document.getElementById('q2A').value = '';
         document.getElementById('q2B').value = '';
         document.getElementById('q2C').value = '';
         document.getElementById('q2D').value = '';
-        loadQuestions('partie2','questions2List');
-    } catch(e) { toast("Erreur: "+e.message, true); }
+        
+        // 🔥 RECHARGER IMMÉDIATEMENT LA LISTE
+        await loadQuestions('partie2', 'questions2List', 'count2');
+        
+    } catch(e) { 
+        toast("❌ Erreur: " + e.message, true); 
+    }
 }
 
+// ========== SUPPRIMER UNE QUESTION ==========
 window.deleteQuestion = async (mode, id) => {
-    if(confirm("Supprimer ?")) {
-        try { await db.ref(`questions/${mode}/${id}`).remove(); toast("✅ Supprimée !"); loadQuestions(mode, mode==='partie1'?'questions1List':'questions2List'); }
-        catch(e) { toast("Erreur: "+e.message, true); }
+    if(confirm("Supprimer cette question ?")) {
+        try { 
+            await db.ref(`questions/${mode}/${id}`).remove(); 
+            toast("✅ Supprimée !"); 
+            
+            // 🔥 RECHARGER IMMÉDIATEMENT LA LISTE
+            if(mode === 'partie1') {
+                await loadQuestions('partie1', 'questions1List', 'count1');
+            } else {
+                await loadQuestions('partie2', 'questions2List', 'count2');
+            }
+        } catch(e) { 
+            toast("❌ Erreur: " + e.message, true); 
+        }
     }
 };
 
+// ========== SUPPRIMER TOUTES LES DONNÉES ==========
 async function deleteAllData() {
     if(confirm("⚠️ SUPPRIMER TOUTES LES DONNÉES ?")) {
         try {
+            // Supprimer toutes les questions
             let q1 = await db.ref('questions/partie1').once('value');
             if(q1.val()) for(let k of Object.keys(q1.val())) await db.ref(`questions/partie1/${k}`).remove();
 
             let q2 = await db.ref('questions/partie2').once('value');
             if(q2.val()) for(let k of Object.keys(q2.val())) await db.ref(`questions/partie2/${k}`).remove();
 
+            // Supprimer le forum
             let f = await db.ref('forum').once('value');
             if(f.val()) for(let k of Object.keys(f.val())) await db.ref(`forum/${k}`).remove();
 
+            // Supprimer les salons
             let r = await db.ref('rooms').once('value');
             if(r.val()) for(let k of Object.keys(r.val())) await db.ref(`rooms/${k}`).remove();
 
+            // Supprimer les classements
             let t = await db.ref('teams').once('value');
             if(t.val()) for(let k of Object.keys(t.val())) await db.ref(`teams/${k}`).remove();
 
             toast("✅ TOUTES DONNÉES SUPPRIMÉES !");
-            loadAllQuestions();
-        } catch(e) { toast("Erreur: "+e.message, true); }
+            
+            // Recharger tout
+            await loadAllQuestions();
+            
+        } catch(e) { 
+            toast("❌ Erreur: " + e.message, true); 
+        }
     }
 }
+
+// ========== INIT ==========
+loadAllQuestions();
 </script>
 </body>
 </html>
