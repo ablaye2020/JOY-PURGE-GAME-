@@ -52,37 +52,39 @@
 
         <div id="tabPartie1" class="tab-content active">
             <h3>AJOUTER QUESTION TEXTE</h3>
-            <input type="text" id="q1Text" placeholder="Question">
-            <input type="text" id="q1A" placeholder="Réponse A">
-            <input type="text" id="q1B" placeholder="Réponse B">
-            <input type="text" id="q1C" placeholder="Réponse C">
-            <input type="text" id="q1D" placeholder="Réponse D">
-            <select id="q1Correct">
+            <input type="text" id="q1Text" placeholder="Question" style="font-size:16px;">
+            <input type="text" id="q1A" placeholder="Réponse A" style="font-size:16px;">
+            <input type="text" id="q1B" placeholder="Réponse B" style="font-size:16px;">
+            <input type="text" id="q1C" placeholder="Réponse C" style="font-size:16px;">
+            <input type="text" id="q1D" placeholder="Réponse D" style="font-size:16px;">
+            <select id="q1Correct" style="font-size:16px;">
                 <option value="0">A</option>
                 <option value="1">B</option>
                 <option value="2">C</option>
                 <option value="3">D</option>
             </select>
-            <button class="btn-green" onclick="addTextQuestion()">➕ AJOUTER</button>
+            <button class="btn-green" onclick="addTextQuestion()" style="width:100%; font-size:16px;">➕ AJOUTER</button>
+            <h3 style="margin-top:25px; color:#ffcc00;">📋 QUESTIONS EXISTANTES (PARTIE 1)</h3>
             <div id="questions1List">⏳ Chargement...</div>
         </div>
 
         <div id="tabPartie2" class="tab-content">
             <h3>AJOUTER QUESTION AVEC IMAGE</h3>
             <p style="color:#ffaa00; font-size:12px;">📸 1. Va sur Imgur.com → upload ton image → copie le lien direct</p>
-            <input type="text" id="q2Text" placeholder="Question">
-            <input type="text" id="q2ImageUrl" placeholder="Lien de l'image (Imgur)">
-            <input type="text" id="q2A" placeholder="Réponse A">
-            <input type="text" id="q2B" placeholder="Réponse B">
-            <input type="text" id="q2C" placeholder="Réponse C">
-            <input type="text" id="q2D" placeholder="Réponse D">
-            <select id="q2Correct">
+            <input type="text" id="q2Text" placeholder="Question" style="font-size:16px;">
+            <input type="text" id="q2ImageUrl" placeholder="Lien de l'image (Imgur)" style="font-size:16px;">
+            <input type="text" id="q2A" placeholder="Réponse A" style="font-size:16px;">
+            <input type="text" id="q2B" placeholder="Réponse B" style="font-size:16px;">
+            <input type="text" id="q2C" placeholder="Réponse C" style="font-size:16px;">
+            <input type="text" id="q2D" placeholder="Réponse D" style="font-size:16px;">
+            <select id="q2Correct" style="font-size:16px;">
                 <option value="0">A</option>
                 <option value="1">B</option>
                 <option value="2">C</option>
                 <option value="3">D</option>
             </select>
-            <button class="btn-green" onclick="addImageQuestion()">➕ AJOUTER</button>
+            <button class="btn-green" onclick="addImageQuestion()" style="width:100%; font-size:16px;">➕ AJOUTER</button>
+            <h3 style="margin-top:25px; color:#ffcc00;">📋 QUESTIONS EXISTANTES (PARTIE 2)</h3>
             <div id="questions2List">⏳ Chargement...</div>
         </div>
     </div>
@@ -106,7 +108,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const ADMIN_PIN = "2007";
 
-// ========== 20 QUESTIONS PAR DÉFAUT ==========
+// ========== 5 QUESTIONS PAR DÉFAUT ==========
 const DEFAULT_QUESTIONS = [
     { text: "Qui est le fondateur du clan GHOST ?", answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"], correct: 1 },
     { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "NIGHT", "SHADOW"], correct: 1 },
@@ -156,15 +158,11 @@ async function loadQuestions(mode, containerId, countId) {
         let questions = [];
         snap.forEach(c => questions.push({ id: c.key, ...c.val() }));
         
-        // Si moins de 20 questions en partie1, ajouter celles par défaut
-        if(questions.length < 20 && mode === 'partie1') {
-            let existingTexts = questions.map(q => q.text);
+        // Si la base est vide, ajouter les questions par défaut
+        if(questions.length === 0 && mode === 'partie1') {
             for(let q of DEFAULT_QUESTIONS) {
-                if(!existingTexts.includes(q.text)) {
-                    await db.ref('questions/partie1').push(q);
-                }
+                await db.ref('questions/partie1').push(q);
             }
-            // Recharger
             snap = await db.ref(`questions/${mode}`).once('value');
             questions = [];
             snap.forEach(c => questions.push({ id: c.key, ...c.val() }));
@@ -215,11 +213,12 @@ async function addTextQuestion() {
     }
     
     try {
+        // 🔥 STRUCTURE CORRECTE - exactement comme DEFAULT_QUESTIONS
         await db.ref('questions/partie1').push({ 
-            text, 
-            answers, 
-            correct, 
-            createdAt: Date.now() 
+            text: text,
+            answers: answers,
+            correct: correct,
+            createdAt: Date.now()
         });
         
         toast("✅ Question ajoutée !");
@@ -230,7 +229,7 @@ async function addTextQuestion() {
         document.getElementById('q1C').value = '';
         document.getElementById('q1D').value = '';
         
-        // 🔥 Recharger la liste
+        // Recharger la liste
         await loadQuestions('partie1', 'questions1List', 'count1');
         
     } catch(e) { 
@@ -257,11 +256,11 @@ async function addImageQuestion() {
     
     try {
         await db.ref('questions/partie2').push({ 
-            text, 
-            image: imageUrl, 
-            answers, 
-            correct, 
-            createdAt: Date.now() 
+            text: text,
+            image: imageUrl,
+            answers: answers,
+            correct: correct,
+            createdAt: Date.now()
         });
         
         toast("✅ Question image ajoutée !");
