@@ -106,6 +106,15 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const ADMIN_PIN = "2007";
 
+// ========== 20 QUESTIONS PAR DÉFAUT ==========
+const DEFAULT_QUESTIONS = [
+    { text: "Qui est le fondateur du clan GHOST ?", answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"], correct: 1 },
+    { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "NIGHT", "SHADOW"], correct: 1 },
+    { text: "Qui est la chef du clan ZYRIX ?", answers: ["MARGOT", "SHAÏNA", "ELYNA", "NABOU"], correct: 1 },
+    { text: "Qui a créé le clan ZETSU ?", answers: ["POUTINE", "QUEEN ZETSU", "BLACK TOBI", "ORACHIMAROU"], correct: 2 },
+    { text: "Qui a créé le clan KILLER ?", answers: ["MUZAN KILLER", "QUEEN KILLER", "THOMAS SHELBY KILLER", "PERFECTION KILLER"], correct: 0 }
+];
+
 function checkAdminPin() {
     let pin = document.getElementById('adminPin').value;
     if(pin === ADMIN_PIN) {
@@ -146,6 +155,20 @@ async function loadQuestions(mode, containerId, countId) {
         let snap = await db.ref(`questions/${mode}`).once('value');
         let questions = [];
         snap.forEach(c => questions.push({ id: c.key, ...c.val() }));
+        
+        // Si moins de 20 questions en partie1, ajouter celles par défaut
+        if(questions.length < 20 && mode === 'partie1') {
+            let existingTexts = questions.map(q => q.text);
+            for(let q of DEFAULT_QUESTIONS) {
+                if(!existingTexts.includes(q.text)) {
+                    await db.ref('questions/partie1').push(q);
+                }
+            }
+            // Recharger
+            snap = await db.ref(`questions/${mode}`).once('value');
+            questions = [];
+            snap.forEach(c => questions.push({ id: c.key, ...c.val() }));
+        }
         
         let container = document.getElementById(containerId);
         let countEl = document.getElementById(countId);
@@ -201,14 +224,13 @@ async function addTextQuestion() {
         
         toast("✅ Question ajoutée !");
         
-        // Réinitialiser les champs
         document.getElementById('q1Text').value = '';
         document.getElementById('q1A').value = '';
         document.getElementById('q1B').value = '';
         document.getElementById('q1C').value = '';
         document.getElementById('q1D').value = '';
         
-        // 🔥 RECHARGER IMMÉDIATEMENT LA LISTE
+        // 🔥 Recharger la liste
         await loadQuestions('partie1', 'questions1List', 'count1');
         
     } catch(e) { 
@@ -244,7 +266,6 @@ async function addImageQuestion() {
         
         toast("✅ Question image ajoutée !");
         
-        // Réinitialiser les champs
         document.getElementById('q2Text').value = '';
         document.getElementById('q2ImageUrl').value = '';
         document.getElementById('q2A').value = '';
@@ -252,7 +273,6 @@ async function addImageQuestion() {
         document.getElementById('q2C').value = '';
         document.getElementById('q2D').value = '';
         
-        // 🔥 RECHARGER IMMÉDIATEMENT LA LISTE
         await loadQuestions('partie2', 'questions2List', 'count2');
         
     } catch(e) { 
@@ -260,14 +280,11 @@ async function addImageQuestion() {
     }
 }
 
-// ========== SUPPRIMER UNE QUESTION ==========
 window.deleteQuestion = async (mode, id) => {
     if(confirm("Supprimer cette question ?")) {
         try { 
             await db.ref(`questions/${mode}/${id}`).remove(); 
             toast("✅ Supprimée !"); 
-            
-            // 🔥 RECHARGER IMMÉDIATEMENT LA LISTE
             if(mode === 'partie1') {
                 await loadQuestions('partie1', 'questions1List', 'count1');
             } else {
@@ -279,41 +296,32 @@ window.deleteQuestion = async (mode, id) => {
     }
 };
 
-// ========== SUPPRIMER TOUTES LES DONNÉES ==========
 async function deleteAllData() {
     if(confirm("⚠️ SUPPRIMER TOUTES LES DONNÉES ?")) {
         try {
-            // Supprimer toutes les questions
             let q1 = await db.ref('questions/partie1').once('value');
             if(q1.val()) for(let k of Object.keys(q1.val())) await db.ref(`questions/partie1/${k}`).remove();
 
             let q2 = await db.ref('questions/partie2').once('value');
             if(q2.val()) for(let k of Object.keys(q2.val())) await db.ref(`questions/partie2/${k}`).remove();
 
-            // Supprimer le forum
             let f = await db.ref('forum').once('value');
             if(f.val()) for(let k of Object.keys(f.val())) await db.ref(`forum/${k}`).remove();
 
-            // Supprimer les salons
             let r = await db.ref('rooms').once('value');
             if(r.val()) for(let k of Object.keys(r.val())) await db.ref(`rooms/${k}`).remove();
 
-            // Supprimer les classements
             let t = await db.ref('teams').once('value');
             if(t.val()) for(let k of Object.keys(t.val())) await db.ref(`teams/${k}`).remove();
 
             toast("✅ TOUTES DONNÉES SUPPRIMÉES !");
-            
-            // Recharger tout
             await loadAllQuestions();
-            
         } catch(e) { 
             toast("❌ Erreur: " + e.message, true); 
         }
     }
 }
 
-// ========== INIT ==========
 loadAllQuestions();
 </script>
 </body>
