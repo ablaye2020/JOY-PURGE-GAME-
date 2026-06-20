@@ -135,6 +135,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// ========== 20 QUESTIONS PAR DÉFAUT ==========
 const DEFAULT_QUESTIONS = [
     { text: "Qui est le fondateur du clan GHOST ?", answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"], correct: 1 },
     { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "NIGHT", "SHADOW"], correct: 1 },
@@ -153,6 +154,7 @@ let musicPlaying = false;
 let bgMusic = null;
 let roomListener = null;
 let currentQuestions = [];
+let questionsLoaded = false;
 
 function initMusic() { bgMusic = document.getElementById('bgMusic'); if(bgMusic) bgMusic.volume = 0.2; }
 function toggleMusic() { if(!bgMusic) initMusic(); if(musicPlaying) { bgMusic.pause(); musicPlaying=false; document.getElementById('musicBtn').innerHTML='🎵'; } else { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }
@@ -327,17 +329,21 @@ function enterRoom(code) {
     watchRoom(code);
 }
 
-// ========== CHARGER LES QUESTIONS DEPUIS FIREBASE ==========
+// ========== CHARGER LES QUESTIONS ==========
 async function reloadQuestions(part) {
     let snap = await db.ref(`questions/${part}`).once('value');
     currentQuestions = [];
     snap.forEach(c => currentQuestions.push(c.val()));
 
-    // Si aucune question en base, ajouter celles par défaut
-    if(currentQuestions.length === 0 && part === 'partie1') {
+    // Si moins de 20 questions, ajouter des questions par défaut
+    if(currentQuestions.length < 20 && part === 'partie1') {
+        let existingTexts = currentQuestions.map(q => q.text);
         for(let q of DEFAULT_QUESTIONS) {
-            await db.ref('questions/partie1').push(q);
+            if(!existingTexts.includes(q.text)) {
+                await db.ref('questions/partie1').push(q);
+            }
         }
+        // Recharger
         snap = await db.ref(`questions/${part}`).once('value');
         currentQuestions = [];
         snap.forEach(c => currentQuestions.push(c.val()));
@@ -396,6 +402,9 @@ function watchRoom(code) {
         }
         // QUIZ
         else if(room.status === 'playing') {
+            if(currentQuestions.length === 0) {
+                await reloadQuestions(room.currentPart || 'partie1');
+            }
             await showQuiz(room, code);
         }
         // PARTIE 2 DÉBLOQUÉE
@@ -437,7 +446,7 @@ async function startGame(code) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     
-    // 🔥 RECHARGER LES QUESTIONS À CHAQUE DÉBUT DE PARTIE
+    // 🔥 Charger au moins 20 questions
     await reloadQuestions('partie1');
     
     let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
@@ -642,6 +651,7 @@ async function leaveRoom() {
     document.getElementById('joinPlayerPhoto').value = '';
     document.getElementById('photoPreview1').innerHTML = '';
     document.getElementById('photoPreview2').innerHTML = '';
+    currentQuestions = [];
     toast("Salon quitté");
 }
 
