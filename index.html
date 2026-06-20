@@ -249,7 +249,7 @@ async function postMessage() {
     } catch(e) { toast("Erreur: "+e.message, true); }
 }
 
-// ========== CRÉER SALON (SANS STORAGE) ==========
+// ========== CRÉER SALON ==========
 async function createTeam() {
     let teamName = document.getElementById('teamName').value.trim();
     let playerName = document.getElementById('playerName').value.trim();
@@ -265,7 +265,6 @@ async function createTeam() {
         let exists = await roomRef.once('value');
         if(exists.exists()) { createTeam(); return; }
 
-        // Si photo uploadée, on la convertit en base64 (pas besoin de Storage)
         let photoUrl = null;
         if(photoFile) {
             photoUrl = await new Promise((resolve) => {
@@ -291,7 +290,7 @@ async function createTeam() {
     }
 }
 
-// ========== REJOINDRE SALON (SANS STORAGE) ==========
+// ========== REJOINDRE SALON ==========
 async function joinTeam() {
     let code = document.getElementById('joinCode').value.trim();
     let playerName = document.getElementById('joinPlayerName').value.trim();
@@ -349,6 +348,7 @@ function watchRoom(code) {
         let isHost = room.players[0]?.id === currentPlayerId;
         let playerCount = room.players.length;
 
+        // ========== AFFICHAGE SALLE D'ATTENTE ==========
         if(room.status === 'waiting') {
             let html = `
                 <div style="text-align:center;">
@@ -381,9 +381,11 @@ function watchRoom(code) {
             html += `<button class="btn" onclick="leaveRoom()">❌ QUITTER</button></div>`;
             document.getElementById('roomView').innerHTML = html;
         }
+        // ========== AFFICHAGE QUIZ ==========
         else if(room.status === 'playing') {
             await showQuiz(room, code);
         }
+        // ========== PARTIE 2 DÉBLOQUÉE ==========
         else if(room.status === 'part2_unlocked') {
             let html2 = `
                 <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center; text-align:center;">
@@ -405,6 +407,7 @@ function watchRoom(code) {
             html2 += `</div></div>`;
             document.getElementById('roomView').innerHTML = html2;
         }
+        // ========== RÉSULTATS FINAUX ==========
         else if(room.status === 'finished') {
             showFinalResults(room);
         }
@@ -432,21 +435,36 @@ async function loadQuestions(part) {
     }
 }
 
-// ========== DÉMARRER LA PARTIE ==========
+// ========== DÉMARRER LA PARTIE (HÔTE) ==========
 async function startGame(code) {
     await loadQuestions('partie1');
     let roomRef = db.ref(`rooms/${code}`);
-    await roomRef.update({ status: 'playing', currentQuestion: 0, currentPart: 'partie1' });
+    // Mettre à jour le statut et la question courante
+    await roomRef.update({ 
+        status: 'playing', 
+        currentQuestion: 0, 
+        currentPart: 'partie1',
+        // Réinitialiser les réponses des joueurs
+        players: (await roomRef.once('value')).val().players.map(p => ({ ...p, answers: [], lastAnswer: null }))
+    });
+    // Forcer le rechargement de la vue pour tous les joueurs
     await loadNextQuestion(code, 0);
 }
 
+// ========== DÉMARRER PARTIE 2 ==========
 async function startPart2(code) {
     await loadQuestions('partie2');
     let roomRef = db.ref(`rooms/${code}`);
-    await roomRef.update({ status: 'playing', currentQuestion: 0, currentPart: 'partie2' });
+    await roomRef.update({ 
+        status: 'playing', 
+        currentQuestion: 0, 
+        currentPart: 'partie2',
+        players: (await roomRef.once('value')).val().players.map(p => ({ ...p, answers: [], lastAnswer: null }))
+    });
     await loadNextQuestion(code, 0);
 }
 
+// ========== CHARGER LA QUESTION SUIVANTE ==========
 async function loadNextQuestion(code, qIndex) {
     if(qIndex >= currentQuestions.length) {
         let roomRef = db.ref(`rooms/${code}`);
@@ -479,10 +497,12 @@ async function loadNextQuestion(code, qIndex) {
 
     let roomRef = db.ref(`rooms/${code}`);
     await roomRef.update({ currentQuestion: qIndex });
+    // Lire la room mise à jour et afficher le quiz
     let room = (await roomRef.once('value')).val();
     await showQuiz(room, code);
 }
 
+// ========== AFFICHER LE QUIZ ==========
 async function showQuiz(room, code) {
     let q = currentQuestions[room.currentQuestion];
     if(!q) return;
@@ -490,9 +510,22 @@ async function showQuiz(room, code) {
     let totalScore = room.players.reduce((s,p) => s + (p.score || 0), 0);
     let progress = (room.currentQuestion / currentQuestions.length) * 100;
 
+    // Vérifier qui a déjà répondu
+    let playerStatus = room.players.map(p => {
+        let answered = p.answers && p.answers.includes(room.currentQuestion);
+        return { name: p.name, answered: answered };
+    });
+
+    let statusHtml = `<div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap; margin-bottom:15px;">`;
+    playerStatus.forEach(p => {
+        statusHtml += `<span style="color:${p.answered ? '#00ff00' : '#ff6666'};">${escapeHtml(p.name)} ${p.answered ? '✅' : '⏳'}</span>`;
+    });
+    statusHtml += `</div>`;
+
     let html = `
         <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center;">
-            <div style="background: rgba(0,0,0,0.7); padding: 20px; border-radius: 15px;">
+            <div style="background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px;">
+                ${statusHtml}
                 <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
                     <div>🏆 SCORE: <span style="color:#ffcc00;">${totalScore}</span> pts</div>
                     <div>📋 Question ${room.currentQuestion+1}/${currentQuestions.length}</div>
@@ -513,40 +546,51 @@ async function showQuiz(room, code) {
     document.getElementById('roomView').innerHTML = html;
 }
 
+// ========== SOUMETTRE UNE RÉPONSE ==========
 async function submitAnswer(code, qIndex, ansIdx) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     let q = currentQuestions[qIndex];
     let playerIndex = room.players.findIndex(p => p.id === currentPlayerId);
 
-    if(room.players[playerIndex].answers?.includes(qIndex)) {
+    // Vérifier si le joueur a déjà répondu
+    if(room.players[playerIndex].answers && room.players[playerIndex].answers.includes(qIndex)) {
         toast("Déjà répondu !", true);
         return;
     }
 
-    room.players[playerIndex].answers = [...(room.players[playerIndex].answers || []), qIndex];
-    room.players[playerIndex].lastAnswer = ansIdx;
-    await roomRef.set(room);
+    // Enregistrer la réponse
+    let updatedAnswers = [...(room.players[playerIndex].answers || []), qIndex];
+    await roomRef.child(`players/${playerIndex}/answers`).set(updatedAnswers);
+    await roomRef.child(`players/${playerIndex}/lastAnswer`).set(ansIdx);
 
-    let allAnswered = room.players.every(p => p.answers?.includes(qIndex));
+    // Vérifier si tous les joueurs ont répondu
+    let updatedRoom = (await roomRef.once('value')).val();
+    let allAnswered = updatedRoom.players.every(p => p.answers && p.answers.includes(qIndex));
 
     if(allAnswered) {
-        let allCorrect = room.players.every(p => p.lastAnswer === q.correct);
+        // Vérifier si tous ont la bonne réponse
+        let allCorrect = updatedRoom.players.every(p => p.lastAnswer === q.correct);
         if(allCorrect) {
-            for(let p of room.players) {
-                p.score = (p.score || 0) + 10;
+            for(let i = 0; i < updatedRoom.players.length; i++) {
+                let newScore = (updatedRoom.players[i].score || 0) + 10;
+                await roomRef.child(`players/${i}/score`).set(newScore);
             }
             toast("✅ TOUS JUSTES ! +10 points !");
         } else {
             toast("❌ QUELQU'UN A FAUX ! 0 point !");
         }
-        await roomRef.set(room);
+        // Passer à la question suivante
         await loadNextQuestion(code, qIndex + 1);
     } else {
-        toast("✅ Réponse enregistrée ! En attente...");
+        // Rafraîchir l'affichage pour montrer qui a répondu
+        let roomAfterAnswer = (await roomRef.once('value')).val();
+        await showQuiz(roomAfterAnswer, code);
+        toast("✅ Réponse enregistrée ! En attente des autres...");
     }
 }
 
+// ========== RÉSULTATS FINAUX ==========
 function showFinalResults(room) {
     let players = [...room.players];
     players.sort((a,b) => (b.score || 0) - (a.score || 0));
