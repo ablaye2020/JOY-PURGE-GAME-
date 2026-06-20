@@ -54,6 +54,9 @@
         .music-btn { position: fixed; bottom: 20px; right: 20px; background: #000; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #ff6600; z-index: 200; font-size: 22px; }
         .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #ffcc00; color: #000; padding: 10px 20px; border-radius: 30px; z-index: 1000; font-weight: bold; animation: fadeOut 2s; }
         .photo-preview { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #ffcc00; margin-top: 8px; }
+        .loading-screen { text-align: center; padding: 40px; color: #ffcc00; font-size: 1.2em; }
+        .loading-screen .spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid #ff6600; border-top: 4px solid #ffcc00; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeOut { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
         @media (max-width: 700px) { .answers { grid-template-columns: 1fr; } }
     </style>
@@ -150,6 +153,7 @@ let musicPlaying = false;
 let bgMusic = null;
 let roomListener = null;
 let currentQuestions = [];
+let questionsLoaded = false;
 
 function initMusic() { bgMusic = document.getElementById('bgMusic'); if(bgMusic) bgMusic.volume = 0.2; }
 function toggleMusic() { if(!bgMusic) initMusic(); if(musicPlaying) { bgMusic.pause(); musicPlaying=false; document.getElementById('musicBtn').innerHTML='🎵'; } else { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }
@@ -324,6 +328,35 @@ function enterRoom(code) {
     watchRoom(code);
 }
 
+// ========== CHARGEMENT DES QUESTIONS UNE SEULE FOIS ==========
+async function loadQuestionsOnce(part) {
+    if(questionsLoaded && currentQuestions.length > 0) return;
+    
+    document.getElementById('roomView').innerHTML = `
+        <div class="loading-screen">
+            <div class="spinner"></div>
+            <p>⏳ Chargement des questions...</p>
+        </div>
+    `;
+    
+    let snap = await db.ref(`questions/${part}`).once('value');
+    currentQuestions = [];
+    snap.forEach(c => currentQuestions.push(c.val()));
+
+    if(currentQuestions.length === 0 && part === 'partie1') {
+        for(let q of DEFAULT_QUESTIONS) {
+            await db.ref('questions/partie1').push(q);
+        }
+        snap = await db.ref(`questions/${part}`).once('value');
+        currentQuestions = [];
+        snap.forEach(c => currentQuestions.push(c.val()));
+    }
+    
+    questionsLoaded = true;
+    console.log("📚 Questions chargées:", currentQuestions.length);
+}
+
+// ========== ÉCOUTE EN TEMPS RÉEL ==========
 function watchRoom(code) {
     let roomRef = db.ref(`rooms/${code}`);
     roomListener = roomRef.on('value', async (snap) => {
@@ -337,6 +370,7 @@ function watchRoom(code) {
         let isHost = room.players[0]?.id === currentPlayerId;
         let playerCount = room.players.length;
 
+        // SALLE D'ATTENTE
         if(room.status === 'waiting') {
             let html = `
                 <div style="text-align:center;">
@@ -369,10 +403,14 @@ function watchRoom(code) {
             html += `<button class="btn" onclick="leaveRoom()">❌ QUITTER</button></div>`;
             document.getElementById('roomView').innerHTML = html;
         }
+        // QUIZ
         else if(room.status === 'playing') {
-            await loadQuestions(room.currentPart || 'partie1');
+            if(!questionsLoaded) {
+                await loadQuestionsOnce(room.currentPart || 'partie1');
+            }
             await showQuiz(room, code);
         }
+        // PARTIE 2 DÉBLOQUÉE
         else if(room.status === 'part2_unlocked') {
             let html2 = `
                 <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center; text-align:center;">
@@ -394,6 +432,7 @@ function watchRoom(code) {
             html2 += `</div></div>`;
             document.getElementById('roomView').innerHTML = html2;
         }
+        // RÉSULTATS
         else if(room.status === 'finished') {
             showFinalResults(room);
         }
@@ -405,27 +444,12 @@ function copyCode(code) {
     toast("✅ Code copié !");
 }
 
-async function loadQuestions(part) {
-    let snap = await db.ref(`questions/${part}`).once('value');
-    currentQuestions = [];
-    snap.forEach(c => currentQuestions.push(c.val()));
-
-    if(currentQuestions.length === 0 && part === 'partie1') {
-        for(let q of DEFAULT_QUESTIONS) {
-            await db.ref('questions/partie1').push(q);
-        }
-        snap = await db.ref(`questions/${part}`).once('value');
-        currentQuestions = [];
-        snap.forEach(c => currentQuestions.push(c.val()));
-    }
-    console.log("📚 Questions chargées:", currentQuestions.length);
-}
-
+// ========== DÉMARRER LA PARTIE ==========
 async function startGame(code) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     
-    await loadQuestions('partie1');
+    await loadQuestionsOnce('partie1');
     
     let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
     
@@ -437,16 +461,13 @@ async function startGame(code) {
     });
     
     toast("🎮 Partie démarrée ! " + currentQuestions.length + " questions");
-    
-    let updatedRoom = (await roomRef.once('value')).val();
-    await showQuiz(updatedRoom, code);
 }
 
 async function startPart2(code) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     
-    await loadQuestions('partie2');
+    await loadQuestionsOnce('partie2');
     
     let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
     
@@ -458,16 +479,12 @@ async function startPart2(code) {
     });
     
     toast("🖼️ Partie 2 démarrée !");
-    
-    let updatedRoom = (await roomRef.once('value')).val();
-    await showQuiz(updatedRoom, code);
 }
 
+// ========== CHARGER LA QUESTION SUIVANTE ==========
 async function loadNextQuestion(code, qIndex) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
-    
-    await loadQuestions(room.currentPart || 'partie1');
     
     if(qIndex >= currentQuestions.length) {
         if(room.currentPart === 'partie1') {
@@ -500,6 +517,7 @@ async function loadNextQuestion(code, qIndex) {
     await showQuiz(updatedRoom, code);
 }
 
+// ========== AFFICHER LE QUIZ ==========
 async function showQuiz(room, code) {
     if(room.currentQuestion >= currentQuestions.length) {
         await loadNextQuestion(code, room.currentQuestion);
@@ -635,6 +653,8 @@ async function leaveRoom() {
     document.getElementById('joinPlayerPhoto').value = '';
     document.getElementById('photoPreview1').innerHTML = '';
     document.getElementById('photoPreview2').innerHTML = '';
+    questionsLoaded = false;
+    currentQuestions = [];
     toast("Salon quitté");
 }
 
