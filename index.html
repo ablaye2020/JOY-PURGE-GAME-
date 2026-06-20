@@ -30,6 +30,7 @@
         h1, h2 { color: #ffcc00; text-align: center; margin-bottom: 15px; }
         .btn { background: #ff3300; color: #ffcc00; border: none; padding: 12px 25px; border-radius: 30px; cursor: pointer; margin: 5px; font-weight: bold; font-size: 16px; }
         .btn-green { background: #008800; }
+        .btn-blue { background: #0066cc; }
         input, textarea { width: 100%; padding: 12px; background: #1a1a1a; border: 2px solid #ff6600; border-radius: 10px; color: white; margin: 8px 0; font-size: 16px; }
         .nav { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
         .nav-btn { background: #222; border: 2px solid #ff6600; padding: 10px 20px; border-radius: 30px; color: #ffcc00; cursor: pointer; }
@@ -56,6 +57,8 @@
         .photo-preview { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #ffcc00; margin-top: 8px; }
         .loading-screen { text-align: center; padding: 40px; color: #ffcc00; font-size: 1.2em; }
         .loading-screen .spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid #ff6600; border-top: 4px solid #ffcc00; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        .password-box { max-width: 400px; margin: 40px auto; text-align: center; }
+        .password-box input { text-align: center; font-size: 1.5em; letter-spacing: 5px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeOut { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
         @media (max-width: 700px) { .answers { grid-template-columns: 1fr; } }
@@ -68,7 +71,7 @@
 
     <div class="card" style="text-align:center;">
         <h1>⚡ JOY PURGE GAME ⚡</h1>
-        <p>"UN SEUL FAUX = 0 POINT POUR TOUTE L'ÉQUIPE"</p>
+        <p>"UN SEUL FAUX = 5 POINTS, 2 FAUX = 0 POINT"</p>
     </div>
 
     <div class="nav">
@@ -135,13 +138,28 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ========== 5 QUESTIONS PAR DÉFAUT ==========
-const DEFAULT_QUESTIONS = [
+// ========== 20 QUESTIONS OFFICIELLES ==========
+const ALL_QUESTIONS = [
     { text: "Qui est le fondateur du clan GHOST ?", answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"], correct: 1 },
-    { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "NIGHT", "SHADOW"], correct: 1 },
-    { text: "Qui est la chef du clan ZYRIX ?", answers: ["MARGOT", "SHAÏNA", "ELYNA", "NABOU"], correct: 1 },
-    { text: "Qui a créé le clan ZETSU ?", answers: ["POUTINE", "QUEEN ZETSU", "BLACK TOBI", "ORACHIMAROU"], correct: 2 },
-    { text: "Qui a créé le clan KILLER ?", answers: ["MUZAN KILLER", "QUEEN KILLER", "THOMAS SHELBY KILLER", "PERFECTION KILLER"], correct: 0 }
+    { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "DIANNY", "NIGHT"], correct: 1 },
+    { text: "Qui est le chef du clan KILLER ?", answers: ["UNIQUE KILLER", "MUZAN KILLER", "THOMAS SHELBY KILLER", "THE QUEEN KILLER"], correct: 1 },
+    { text: "Qui a créé MORNINGSTAR ?", answers: ["SUIJINA", "DAISUKE", "MEC IDÉAL", "Mr AURA"], correct: 2 },
+    { text: "Qui est le chef du clan ZETSU ?", answers: ["POUTINE", "ORACHIMARU", "BLACK TOBI", "QUEEN ZETSU"], correct: 2 },
+    { text: "Qui est le chef du clan SK7 ?", answers: ["Mr LEY", "NINJAXX", "SUPRÊME DESTRUCTOR", "DRUZZ"], correct: 2 },
+    { text: "L'ordre suprême de la purge était quelle organisation ?", answers: ["OMP", "OPS", "OSP", "LSP"], correct: 2 },
+    { text: "Qui a créé le clan WORKER ?", answers: ["JIN WORKER", "Sigharaki worker", "SANZU WORKER", "KILUA WORKER"], correct: 2 },
+    { text: "Quel clan utilise ce proverbe : 'J'aime la fraises 🍓' ?", answers: ["CLAN KILLER", "CLAN NY HADES", "CLAN BIGDEAL", "CLAN NETTOYEUR"], correct: 1 },
+    { text: "Quel chef de clan dit : 'J'aime la rose 🌹' ?", answers: ["CHEF CLAN GRIMM", "CHEF CLAN KILLER", "CHEF CLAN LARA", "CHEF CLAN GOD"], correct: 1 },
+    { text: "Qui dit dans son journal : 'Sans moi la purge serait morte' ?", answers: ["CIEL StarHive", "WILLIAM MORYARTY", "DAISUKE KAMBE", "MEC IDÉAL"], correct: 3 },
+    { text: "Qui est la chef du clan ZYRIX ?", answers: ["ELYNA", "SHAÏNA", "MARGOT", "NABOU"], correct: 1 },
+    { text: "Qui était le meilleur purgeur solitaire de 2025 ?", answers: ["SAITAMA", "DARK GAMEUR", "JOY BOY", "AKASHI"], correct: 2 },
+    { text: "Quelle organisation est contre la purge ?", answers: ["JAM", "JAP", "OMP", "OSP"], correct: 1 },
+    { text: "Quelle organisation traque les marabouts ?", answers: ["JAP", "JAM", "CIREURS", "BLACK LYON"], correct: 1 },
+    { text: "Qui est le chef du clan ASTRIOUS ?", answers: ["SAITAMA", "GOJO", "ARATA", "PERFECTION"], correct: 1 },
+    { text: "Qui est le chef du jugement des 3 rois ?", answers: ["LORD KIRA", "JAMES", "ESCANOR", "BLACK SAIYAN"], correct: 2 },
+    { text: "Qui étaient le duo infernal de 2025 ?", answers: ["SAITAMA X GOJO", "SAITAMA X ARATA", "JOY BOY X LIVAÏ", "MADARA X INCONNU"], correct: 2 },
+    { text: "Qui a créé PURGE HUB ?", answers: ["NO NAME", "LORD AZIZ", "INCONNU BOY", "TECH"], correct: 2 },
+    { text: "Qui était le chancelier de l'OMP ?", answers: ["ANGEL", "LORD IVAR", "SERAPHIN", "ANDRÉ"], correct: 1 }
 ];
 
 let currentRoomCode = null;
@@ -154,6 +172,7 @@ let musicPlaying = false;
 let bgMusic = null;
 let roomListener = null;
 let currentQuestions = [];
+let part1Completed = false;
 
 function initMusic() { bgMusic = document.getElementById('bgMusic'); if(bgMusic) bgMusic.volume = 0.2; }
 function toggleMusic() { if(!bgMusic) initMusic(); if(musicPlaying) { bgMusic.pause(); musicPlaying=false; document.getElementById('musicBtn').innerHTML='🎵'; } else { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }
@@ -202,7 +221,7 @@ async function loadRanking() {
     try {
         let snap = await db.ref('teams/partie1').once('value');
         let teams = [];
-        snap.forEach(c => teams.push(c.val()));
+        snap.forEach(c => teams.push({ id: c.key, ...c.val() }));
         teams.sort((a,b) => (b.score||0) - (a.score||0));
         let div = document.getElementById('rankingList');
         if(teams.length === 0) { div.innerHTML = 'Aucune équipe classée'; return; }
@@ -328,22 +347,8 @@ function enterRoom(code) {
     watchRoom(code);
 }
 
-// ========== CHARGER LES QUESTIONS ==========
-async function reloadQuestions(part) {
-    let snap = await db.ref(`questions/${part}`).once('value');
-    currentQuestions = [];
-    snap.forEach(c => currentQuestions.push(c.val()));
-
-    // Si aucune question, ajouter celles par défaut
-    if(currentQuestions.length === 0 && part === 'partie1') {
-        for(let q of DEFAULT_QUESTIONS) {
-            await db.ref('questions/partie1').push(q);
-        }
-        snap = await db.ref(`questions/${part}`).once('value');
-        currentQuestions = [];
-        snap.forEach(c => currentQuestions.push(c.val()));
-    }
-    
+function loadQuestions() {
+    currentQuestions = ALL_QUESTIONS;
     console.log("📚 Questions chargées:", currentQuestions.length);
     return currentQuestions;
 }
@@ -382,43 +387,20 @@ function watchRoom(code) {
 
             html += `</div>`;
 
-            if(isHost && playerCount >= 2) {
+            if(isHost && playerCount === 4) {
                 html += `<button class="btn btn-green" onclick="startGame('${code}')">🎮 COMMENCER (${playerCount}/4)</button>`;
             } else if(isHost) {
-                html += `<p>⏳ En attente de joueurs... (${playerCount}/4 minimum 2)</p>`;
+                html += `<p>⏳ En attente de 4 joueurs... (${playerCount}/4)</p>`;
             } else {
-                html += `<p>⏳ En attente que l'hôte commence...</p>`;
+                html += `<p>⏳ En attente que l'hôte commence (${playerCount}/4)</p>`;
             }
 
             html += `<button class="btn" onclick="leaveRoom()">❌ QUITTER</button></div>`;
             document.getElementById('roomView').innerHTML = html;
         }
         else if(room.status === 'playing') {
-            if(currentQuestions.length === 0) {
-                await reloadQuestions(room.currentPart || 'partie1');
-            }
+            if(currentQuestions.length === 0) loadQuestions();
             await showQuiz(room, code);
-        }
-        else if(room.status === 'part2_unlocked') {
-            let html2 = `
-                <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center; text-align:center;">
-                    <div style="background: rgba(0,0,0,0.7); padding: 20px; border-radius: 15px;">
-                        <h2 style="color:#ffcc00;">🏆 PARTIE 1 TERMINÉE !</h2>
-                        <div style="font-size:1.5em; margin:20px; color:#ffcc00;">Score: ${room.scorePart1} points</div>
-            `;
-            if(room.scorePart1 >= 120) {
-                html2 += `
-                    <p style="color:#00ff00;">✅ PARTIE 2 DÉBLOQUÉE !</p>
-                    <button class="btn btn-green" onclick="startPart2('${code}')">🖼️ LANCER PARTIE 2</button>
-                `;
-            } else {
-                html2 += `
-                    <p style="color:#ff6666;">❌ Score < 120. Partie terminée.</p>
-                    <button class="btn" onclick="leaveRoom()">🏠 QUITTER</button>
-                `;
-            }
-            html2 += `</div></div>`;
-            document.getElementById('roomView').innerHTML = html2;
         }
         else if(room.status === 'finished') {
             showFinalResults(room);
@@ -435,7 +417,8 @@ async function startGame(code) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     
-    await reloadQuestions('partie1');
+    loadQuestions();
+    let qCount = currentQuestions.length;
     
     let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
     
@@ -446,25 +429,7 @@ async function startGame(code) {
         players: updatedPlayers
     });
     
-    toast("🎮 Partie démarrée ! " + currentQuestions.length + " questions");
-}
-
-async function startPart2(code) {
-    let roomRef = db.ref(`rooms/${code}`);
-    let room = (await roomRef.once('value')).val();
-    
-    await reloadQuestions('partie2');
-    
-    let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
-    
-    await roomRef.update({
-        status: 'playing',
-        currentQuestion: 0,
-        currentPart: 'partie2',
-        players: updatedPlayers
-    });
-    
-    toast("🖼️ Partie 2 démarrée !");
+    toast("🎮 Partie démarrée ! " + qCount + " questions");
 }
 
 async function loadNextQuestion(code, qIndex) {
@@ -472,28 +437,21 @@ async function loadNextQuestion(code, qIndex) {
     let room = (await roomRef.once('value')).val();
     
     if(qIndex >= currentQuestions.length) {
-        if(room.currentPart === 'partie1') {
-            let total = room.players.reduce((s,p) => s + (p.score || 0), 0);
-            await roomRef.update({ status: 'part2_unlocked', scorePart1: total });
-            if(total >= 120) toast("✅ 120 points ! PARTIE 2 DÉBLOQUÉE !");
-            else toast(`❌ Score: ${total} points. Partie terminée.`);
-        } else {
-            let totalScore = room.players.reduce((s,p) => s + (p.score || 0), 0);
-            let sp1 = room.scorePart1 || 0;
-            await roomRef.update({ status: 'finished', scorePart2: totalScore });
-            let teamData = {
-                teamName: room.teamName,
-                players: room.players,
-                score: sp1 + totalScore,
-                scorePart1: sp1,
-                scorePart2: totalScore,
-                date: Date.now()
-            };
-            await db.ref(`teams/partie1/${code}`).set(teamData);
-            await db.ref(`teams/partie2/${code}`).set(teamData);
-            toast(`🏆 Partie terminée ! Score total: ${sp1 + totalScore} points !`);
-            loadRanking();
-        }
+        // Fin de la partie 1
+        let total = room.players.reduce((s,p) => s + (p.score || 0), 0);
+        await roomRef.update({ status: 'finished', scorePart1: total });
+        
+        // Sauvegarder le classement
+        let teamData = {
+            teamName: room.teamName,
+            players: room.players,
+            score: total,
+            date: Date.now()
+        };
+        await db.ref(`teams/partie1/${code}`).set(teamData);
+        
+        toast(`🏆 Partie terminée ! Score: ${total} points !`);
+        loadRanking();
         return;
     }
 
@@ -533,12 +491,9 @@ async function showQuiz(room, code) {
                     <div>📋 Question ${room.currentQuestion+1}/${currentQuestions.length}</div>
                 </div>
                 <div class="progress-bar"><div class="progress-fill" style="width:${progress}%;"></div></div>
+                <div class="question-text">${escapeHtml(q.text)}</div>
+                <div class="answers">
     `;
-
-    if(q.image) html += `<img src="${q.image}" style="max-width:100%; max-height:200px; border-radius:15px; margin:15px auto; display:block;">`;
-
-    html += `<div class="question-text">${escapeHtml(q.text)}</div>
-        <div class="answers">`;
 
     q.answers.forEach((ans, i) => {
         html += `<div class="answer" onclick="submitAnswer('${code}', ${room.currentQuestion}, ${i})">${String.fromCharCode(65+i)}. ${escapeHtml(ans)}</div>`;
@@ -572,16 +527,31 @@ async function submitAnswer(code, qIndex, ansIdx) {
     let allAnswered = updatedRoom.players.every(p => p.answers && p.answers.includes(qIndex));
 
     if(allAnswered) {
-        let allCorrect = updatedRoom.players.every(p => p.lastAnswer === q.correct);
-        if(allCorrect) {
+        // Calculer les points selon la règle : 1 faux = 5 pts, 2+ faux = 0 pts
+        let wrongCount = updatedRoom.players.filter(p => p.lastAnswer !== q.correct).length;
+        
+        if(wrongCount === 0) {
+            // Tous justes : +10 points
             for(let i = 0; i < updatedRoom.players.length; i++) {
                 let newScore = (updatedRoom.players[i].score || 0) + 10;
                 await roomRef.child(`players/${i}/score`).set(newScore);
             }
             toast("✅ TOUS JUSTES ! +10 points !");
+        } else if(wrongCount === 1) {
+            // Un seul faux : +5 points pour ceux qui ont juste
+            for(let i = 0; i < updatedRoom.players.length; i++) {
+                let p = updatedRoom.players[i];
+                if(p.lastAnswer === q.correct) {
+                    let newScore = (p.score || 0) + 5;
+                    await roomRef.child(`players/${i}/score`).set(newScore);
+                }
+            }
+            toast("⚠️ 1 FAUX ! Ceux qui ont juste gagnent 5 points.");
         } else {
-            toast("❌ QUELQU'UN A FAUX ! 0 point !");
+            // 2 ou plus faux : 0 point pour tous
+            toast("❌ " + wrongCount + " FAUX ! 0 point pour tous.");
         }
+        
         await loadNextQuestion(code, qIndex + 1);
     } else {
         let roomAfterAnswer = (await roomRef.once('value')).val();
@@ -612,8 +582,37 @@ function showFinalResults(room) {
         `;
     });
 
-    html += `</div><button class="btn" onclick="leaveRoom()">🏠 QUITTER</button></div></div>`;
+    html += `</div>
+            <button class="btn" onclick="leaveRoom()">🏠 QUITTER</button>
+            <button class="btn btn-blue" onclick="showPasswordPrompt()">🔐 RECONNEXION</button>
+        </div></div>`;
     document.getElementById('roomView').innerHTML = html;
+}
+
+function showPasswordPrompt() {
+    let html = `
+        <div class="password-box card">
+            <h2>🔐 RECONNEXION</h2>
+            <p>Entrez le mot de passe pour continuer</p>
+            <input type="password" id="reconnectPassword" placeholder="Mot de passe">
+            <button class="btn btn-green" onclick="reconnectWithPassword()">🔐 SE RECONNECTER</button>
+            <button class="btn" onclick="leaveRoom()">🏠 QUITTER</button>
+        </div>
+    `;
+    document.getElementById('roomView').innerHTML = html;
+}
+
+function reconnectWithPassword() {
+    let password = document.getElementById('reconnectPassword').value.trim();
+    if(password === "purge2025") {
+        toast("✅ Reconnexion réussie !");
+        // Recharger la room
+        if(currentRoomCode) {
+            watchRoom(currentRoomCode);
+        }
+    } else {
+        toast("❌ Mot de passe incorrect", true);
+    }
 }
 
 async function leaveRoom() {
