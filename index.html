@@ -119,7 +119,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <script>
-// ========== FIREBASE V4 ==========
 const firebaseConfig = {
     apiKey: "AIzaSyAG30Darx6LTAc9XQVYOOEDC6L1AvKeFQA",
     authDomain: "joy-purge-game-v4.firebaseapp.com",
@@ -133,7 +132,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ========== QUESTIONS PRÉ-ENREGISTRÉES (si base vide) ==========
 const DEFAULT_QUESTIONS = [
     { text: "Qui est le fondateur du clan GHOST ?", answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"], correct: 1 },
     { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "NIGHT", "SHADOW"], correct: 1 },
@@ -142,7 +140,6 @@ const DEFAULT_QUESTIONS = [
     { text: "Qui a créé le clan KILLER ?", answers: ["MUZAN KILLER", "QUEEN KILLER", "THOMAS SHELBY KILLER", "PERFECTION KILLER"], correct: 0 }
 ];
 
-// ========== VARIABLES ==========
 let currentRoomCode = null;
 let currentPlayerId = localStorage.getItem('playerId');
 if(!currentPlayerId) {
@@ -154,12 +151,10 @@ let bgMusic = null;
 let roomListener = null;
 let currentQuestions = [];
 
-// ========== MUSIQUE ==========
 function initMusic() { bgMusic = document.getElementById('bgMusic'); if(bgMusic) bgMusic.volume = 0.2; }
 function toggleMusic() { if(!bgMusic) initMusic(); if(musicPlaying) { bgMusic.pause(); musicPlaying=false; document.getElementById('musicBtn').innerHTML='🎵'; } else { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }
 document.body.addEventListener('click', ()=>{ if(!musicPlaying && bgMusic) { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }, {once:true});
 
-// ========== APERÇU PHOTO ==========
 function previewPhoto(input, previewId) {
     let preview = document.getElementById(previewId);
     preview.innerHTML = '';
@@ -178,7 +173,6 @@ function previewPhoto(input, previewId) {
 document.getElementById('playerPhoto')?.addEventListener('change', (e) => previewPhoto(e.target, 'photoPreview1'));
 document.getElementById('joinPlayerPhoto')?.addEventListener('change', (e) => previewPhoto(e.target, 'photoPreview2'));
 
-// ========== UTILITAIRES ==========
 function toast(msg, err) {
     let t = document.createElement('div');
     t.className = 'toast';
@@ -200,7 +194,6 @@ function showSection(section) {
     if(section === 'forum') loadForum();
 }
 
-// ========== CLASSEMENT ==========
 async function loadRanking() {
     try {
         let snap = await db.ref('teams/partie1').once('value');
@@ -218,7 +211,6 @@ async function loadRanking() {
     } catch(e) { console.log(e); }
 }
 
-// ========== FORUM ==========
 async function loadForum() {
     try {
         let snap = await db.ref('forum').once('value');
@@ -249,7 +241,6 @@ async function postMessage() {
     } catch(e) { toast("Erreur: "+e.message, true); }
 }
 
-// ========== CRÉER SALON ==========
 async function createTeam() {
     let teamName = document.getElementById('teamName').value.trim();
     let playerName = document.getElementById('playerName').value.trim();
@@ -290,7 +281,6 @@ async function createTeam() {
     }
 }
 
-// ========== REJOINDRE SALON ==========
 async function joinTeam() {
     let code = document.getElementById('joinCode').value.trim();
     let playerName = document.getElementById('joinPlayerName').value.trim();
@@ -326,7 +316,6 @@ async function joinTeam() {
     }
 }
 
-// ========== SALLE D'ATTENTE ==========
 function enterRoom(code) {
     currentRoomCode = code;
     document.getElementById('lobbyView').style.display = 'none';
@@ -335,7 +324,6 @@ function enterRoom(code) {
     watchRoom(code);
 }
 
-// ========== ÉCOUTE EN TEMPS RÉEL ==========
 function watchRoom(code) {
     let roomRef = db.ref(`rooms/${code}`);
     roomListener = roomRef.on('value', async (snap) => {
@@ -349,9 +337,6 @@ function watchRoom(code) {
         let isHost = room.players[0]?.id === currentPlayerId;
         let playerCount = room.players.length;
 
-        console.log("🔄 Mise à jour room:", room.status, "Question:", room.currentQuestion);
-
-        // ========== SALLE D'ATTENTE ==========
         if(room.status === 'waiting') {
             let html = `
                 <div style="text-align:center;">
@@ -384,13 +369,10 @@ function watchRoom(code) {
             html += `<button class="btn" onclick="leaveRoom()">❌ QUITTER</button></div>`;
             document.getElementById('roomView').innerHTML = html;
         }
-        // ========== QUIZ ==========
         else if(room.status === 'playing') {
-            // 🔥 CHARGER LES QUESTIONS À CHAQUE FOIS (pour récupérer les nouvelles)
             await loadQuestions(room.currentPart || 'partie1');
             await showQuiz(room, code);
         }
-        // ========== PARTIE 2 DÉBLOQUÉE ==========
         else if(room.status === 'part2_unlocked') {
             let html2 = `
                 <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center; text-align:center;">
@@ -412,7 +394,6 @@ function watchRoom(code) {
             html2 += `</div></div>`;
             document.getElementById('roomView').innerHTML = html2;
         }
-        // ========== RÉSULTATS ==========
         else if(room.status === 'finished') {
             showFinalResults(room);
         }
@@ -424,37 +405,30 @@ function copyCode(code) {
     toast("✅ Code copié !");
 }
 
-// ========== CHARGER LES QUESTIONS (AVEC FORCE) ==========
 async function loadQuestions(part) {
     let snap = await db.ref(`questions/${part}`).once('value');
     currentQuestions = [];
     snap.forEach(c => currentQuestions.push(c.val()));
 
-    // Si pas de questions en base, ajouter celles par défaut
     if(currentQuestions.length === 0 && part === 'partie1') {
         for(let q of DEFAULT_QUESTIONS) {
             await db.ref('questions/partie1').push(q);
         }
         snap = await db.ref(`questions/${part}`).once('value');
         currentQuestions = [];
-        snap.forEach(c => currentQuestions.push(c.val());
+        snap.forEach(c => currentQuestions.push(c.val()));
     }
-    
     console.log("📚 Questions chargées:", currentQuestions.length);
 }
 
-// ========== DÉMARRER LA PARTIE ==========
 async function startGame(code) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     
-    // 🔥 Forcer le rechargement des questions
     await loadQuestions('partie1');
     
-    // Réinitialiser les réponses des joueurs
     let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
     
-    // Mettre à jour la room
     await roomRef.update({
         status: 'playing',
         currentQuestion: 0,
@@ -464,7 +438,6 @@ async function startGame(code) {
     
     toast("🎮 Partie démarrée ! " + currentQuestions.length + " questions");
     
-    // Afficher le quiz
     let updatedRoom = (await roomRef.once('value')).val();
     await showQuiz(updatedRoom, code);
 }
@@ -490,13 +463,10 @@ async function startPart2(code) {
     await showQuiz(updatedRoom, code);
 }
 
-// ========== CHARGER LA QUESTION SUIVANTE ==========
 async function loadNextQuestion(code, qIndex) {
-    // 🔥 Recharger les questions à chaque étape
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     
-    // Recharger les questions pour être sûr d'avoir les dernières
     await loadQuestions(room.currentPart || 'partie1');
     
     if(qIndex >= currentQuestions.length) {
@@ -530,9 +500,7 @@ async function loadNextQuestion(code, qIndex) {
     await showQuiz(updatedRoom, code);
 }
 
-// ========== AFFICHER LE QUIZ ==========
 async function showQuiz(room, code) {
-    // 🔥 Vérifier que la question existe
     if(room.currentQuestion >= currentQuestions.length) {
         await loadNextQuestion(code, room.currentQuestion);
         return;
@@ -547,7 +515,6 @@ async function showQuiz(room, code) {
     let totalScore = room.players.reduce((s,p) => s + (p.score || 0), 0);
     let progress = (room.currentQuestion / currentQuestions.length) * 100;
 
-    // Statut des joueurs
     let statusHtml = `<div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap; margin-bottom:15px;">`;
     room.players.forEach(p => {
         let answered = p.answers && p.answers.includes(room.currentQuestion);
@@ -579,7 +546,6 @@ async function showQuiz(room, code) {
     document.getElementById('roomView').innerHTML = html;
 }
 
-// ========== SOUMETTRE UNE RÉPONSE ==========
 async function submitAnswer(code, qIndex, ansIdx) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
@@ -596,12 +562,10 @@ async function submitAnswer(code, qIndex, ansIdx) {
         return;
     }
 
-    // Enregistrer la réponse
     let updatedAnswers = [...(room.players[playerIndex].answers || []), qIndex];
     await roomRef.child(`players/${playerIndex}/answers`).set(updatedAnswers);
     await roomRef.child(`players/${playerIndex}/lastAnswer`).set(ansIdx);
 
-    // Vérifier si tous ont répondu
     let updatedRoom = (await roomRef.once('value')).val();
     let allAnswered = updatedRoom.players.every(p => p.answers && p.answers.includes(qIndex));
 
@@ -618,14 +582,12 @@ async function submitAnswer(code, qIndex, ansIdx) {
         }
         await loadNextQuestion(code, qIndex + 1);
     } else {
-        // Rafraîchir l'affichage
         let roomAfterAnswer = (await roomRef.once('value')).val();
         await showQuiz(roomAfterAnswer, code);
         toast("✅ Réponse enregistrée ! En attente des autres...");
     }
 }
 
-// ========== RÉSULTATS FINAUX ==========
 function showFinalResults(room) {
     let players = [...room.players];
     players.sort((a,b) => (b.score || 0) - (a.score || 0));
@@ -652,7 +614,6 @@ function showFinalResults(room) {
     document.getElementById('roomView').innerHTML = html;
 }
 
-// ========== QUITTER ==========
 async function leaveRoom() {
     if(currentRoomCode) {
         let roomRef = db.ref(`rooms/${currentRoomCode}`);
@@ -677,7 +638,6 @@ async function leaveRoom() {
     toast("Salon quitté");
 }
 
-// ========== INIT ==========
 initMusic();
 loadRanking();
 loadForum();
