@@ -153,7 +153,6 @@ let musicPlaying = false;
 let bgMusic = null;
 let roomListener = null;
 let currentQuestions = [];
-let questionsLoaded = false;
 
 function initMusic() { bgMusic = document.getElementById('bgMusic'); if(bgMusic) bgMusic.volume = 0.2; }
 function toggleMusic() { if(!bgMusic) initMusic(); if(musicPlaying) { bgMusic.pause(); musicPlaying=false; document.getElementById('musicBtn').innerHTML='🎵'; } else { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }
@@ -328,21 +327,13 @@ function enterRoom(code) {
     watchRoom(code);
 }
 
-// ========== CHARGEMENT DES QUESTIONS UNE SEULE FOIS ==========
-async function loadQuestionsOnce(part) {
-    if(questionsLoaded && currentQuestions.length > 0) return;
-    
-    document.getElementById('roomView').innerHTML = `
-        <div class="loading-screen">
-            <div class="spinner"></div>
-            <p>⏳ Chargement des questions...</p>
-        </div>
-    `;
-    
+// ========== CHARGER LES QUESTIONS DEPUIS FIREBASE ==========
+async function reloadQuestions(part) {
     let snap = await db.ref(`questions/${part}`).once('value');
     currentQuestions = [];
     snap.forEach(c => currentQuestions.push(c.val()));
 
+    // Si aucune question en base, ajouter celles par défaut
     if(currentQuestions.length === 0 && part === 'partie1') {
         for(let q of DEFAULT_QUESTIONS) {
             await db.ref('questions/partie1').push(q);
@@ -352,8 +343,8 @@ async function loadQuestionsOnce(part) {
         snap.forEach(c => currentQuestions.push(c.val()));
     }
     
-    questionsLoaded = true;
     console.log("📚 Questions chargées:", currentQuestions.length);
+    return currentQuestions;
 }
 
 // ========== ÉCOUTE EN TEMPS RÉEL ==========
@@ -405,9 +396,6 @@ function watchRoom(code) {
         }
         // QUIZ
         else if(room.status === 'playing') {
-            if(!questionsLoaded) {
-                await loadQuestionsOnce(room.currentPart || 'partie1');
-            }
             await showQuiz(room, code);
         }
         // PARTIE 2 DÉBLOQUÉE
@@ -449,7 +437,8 @@ async function startGame(code) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     
-    await loadQuestionsOnce('partie1');
+    // 🔥 RECHARGER LES QUESTIONS À CHAQUE DÉBUT DE PARTIE
+    await reloadQuestions('partie1');
     
     let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
     
@@ -467,7 +456,7 @@ async function startPart2(code) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     
-    await loadQuestionsOnce('partie2');
+    await reloadQuestions('partie2');
     
     let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
     
@@ -653,8 +642,6 @@ async function leaveRoom() {
     document.getElementById('joinPlayerPhoto').value = '';
     document.getElementById('photoPreview1').innerHTML = '';
     document.getElementById('photoPreview2').innerHTML = '';
-    questionsLoaded = false;
-    currentQuestions = [];
     toast("Salon quitté");
 }
 
