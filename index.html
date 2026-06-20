@@ -135,7 +135,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ========== 20 QUESTIONS PAR DÉFAUT ==========
+// ========== 5 QUESTIONS PAR DÉFAUT ==========
 const DEFAULT_QUESTIONS = [
     { text: "Qui est le fondateur du clan GHOST ?", answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"], correct: 1 },
     { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "NIGHT", "SHADOW"], correct: 1 },
@@ -154,7 +154,6 @@ let musicPlaying = false;
 let bgMusic = null;
 let roomListener = null;
 let currentQuestions = [];
-let questionsLoaded = false;
 
 function initMusic() { bgMusic = document.getElementById('bgMusic'); if(bgMusic) bgMusic.volume = 0.2; }
 function toggleMusic() { if(!bgMusic) initMusic(); if(musicPlaying) { bgMusic.pause(); musicPlaying=false; document.getElementById('musicBtn').innerHTML='🎵'; } else { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }
@@ -335,15 +334,11 @@ async function reloadQuestions(part) {
     currentQuestions = [];
     snap.forEach(c => currentQuestions.push(c.val()));
 
-    // Si moins de 20 questions, ajouter des questions par défaut
-    if(currentQuestions.length < 20 && part === 'partie1') {
-        let existingTexts = currentQuestions.map(q => q.text);
+    // Si aucune question, ajouter celles par défaut
+    if(currentQuestions.length === 0 && part === 'partie1') {
         for(let q of DEFAULT_QUESTIONS) {
-            if(!existingTexts.includes(q.text)) {
-                await db.ref('questions/partie1').push(q);
-            }
+            await db.ref('questions/partie1').push(q);
         }
-        // Recharger
         snap = await db.ref(`questions/${part}`).once('value');
         currentQuestions = [];
         snap.forEach(c => currentQuestions.push(c.val()));
@@ -353,7 +348,6 @@ async function reloadQuestions(part) {
     return currentQuestions;
 }
 
-// ========== ÉCOUTE EN TEMPS RÉEL ==========
 function watchRoom(code) {
     let roomRef = db.ref(`rooms/${code}`);
     roomListener = roomRef.on('value', async (snap) => {
@@ -367,7 +361,6 @@ function watchRoom(code) {
         let isHost = room.players[0]?.id === currentPlayerId;
         let playerCount = room.players.length;
 
-        // SALLE D'ATTENTE
         if(room.status === 'waiting') {
             let html = `
                 <div style="text-align:center;">
@@ -400,14 +393,12 @@ function watchRoom(code) {
             html += `<button class="btn" onclick="leaveRoom()">❌ QUITTER</button></div>`;
             document.getElementById('roomView').innerHTML = html;
         }
-        // QUIZ
         else if(room.status === 'playing') {
             if(currentQuestions.length === 0) {
                 await reloadQuestions(room.currentPart || 'partie1');
             }
             await showQuiz(room, code);
         }
-        // PARTIE 2 DÉBLOQUÉE
         else if(room.status === 'part2_unlocked') {
             let html2 = `
                 <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center; text-align:center;">
@@ -429,7 +420,6 @@ function watchRoom(code) {
             html2 += `</div></div>`;
             document.getElementById('roomView').innerHTML = html2;
         }
-        // RÉSULTATS
         else if(room.status === 'finished') {
             showFinalResults(room);
         }
@@ -441,12 +431,10 @@ function copyCode(code) {
     toast("✅ Code copié !");
 }
 
-// ========== DÉMARRER LA PARTIE ==========
 async function startGame(code) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     
-    // 🔥 Charger au moins 20 questions
     await reloadQuestions('partie1');
     
     let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
@@ -479,7 +467,6 @@ async function startPart2(code) {
     toast("🖼️ Partie 2 démarrée !");
 }
 
-// ========== CHARGER LA QUESTION SUIVANTE ==========
 async function loadNextQuestion(code, qIndex) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
@@ -515,7 +502,6 @@ async function loadNextQuestion(code, qIndex) {
     await showQuiz(updatedRoom, code);
 }
 
-// ========== AFFICHER LE QUIZ ==========
 async function showQuiz(room, code) {
     if(room.currentQuestion >= currentQuestions.length) {
         await loadNextQuestion(code, room.currentQuestion);
