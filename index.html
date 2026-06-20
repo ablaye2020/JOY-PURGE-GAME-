@@ -133,7 +133,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ========== QUESTIONS PRÉ-ENREGISTRÉES ==========
+// ========== QUESTIONS PRÉ-ENREGISTRÉES (si base vide) ==========
 const DEFAULT_QUESTIONS = [
     { text: "Qui est le fondateur du clan GHOST ?", answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"], correct: 1 },
     { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "NIGHT", "SHADOW"], correct: 1 },
@@ -386,10 +386,8 @@ function watchRoom(code) {
         }
         // ========== QUIZ ==========
         else if(room.status === 'playing') {
-            // Charger les questions si besoin
-            if(currentQuestions.length === 0) {
-                await loadQuestions(room.currentPart || 'partie1');
-            }
+            // 🔥 CHARGER LES QUESTIONS À CHAQUE FOIS (pour récupérer les nouvelles)
+            await loadQuestions(room.currentPart || 'partie1');
             await showQuiz(room, code);
         }
         // ========== PARTIE 2 DÉBLOQUÉE ==========
@@ -426,20 +424,23 @@ function copyCode(code) {
     toast("✅ Code copié !");
 }
 
-// ========== CHARGER LES QUESTIONS ==========
+// ========== CHARGER LES QUESTIONS (AVEC FORCE) ==========
 async function loadQuestions(part) {
     let snap = await db.ref(`questions/${part}`).once('value');
     currentQuestions = [];
     snap.forEach(c => currentQuestions.push(c.val()));
 
+    // Si pas de questions en base, ajouter celles par défaut
     if(currentQuestions.length === 0 && part === 'partie1') {
         for(let q of DEFAULT_QUESTIONS) {
             await db.ref('questions/partie1').push(q);
         }
         snap = await db.ref(`questions/${part}`).once('value');
         currentQuestions = [];
-        snap.forEach(c => currentQuestions.push(c.val()));
+        snap.forEach(c => currentQuestions.push(c.val());
     }
+    
+    console.log("📚 Questions chargées:", currentQuestions.length);
 }
 
 // ========== DÉMARRER LA PARTIE ==========
@@ -447,7 +448,7 @@ async function startGame(code) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     
-    // Charger les questions
+    // 🔥 Forcer le rechargement des questions
     await loadQuestions('partie1');
     
     // Réinitialiser les réponses des joueurs
@@ -461,9 +462,9 @@ async function startGame(code) {
         players: updatedPlayers
     });
     
-    toast("🎮 Partie démarrée !");
+    toast("🎮 Partie démarrée ! " + currentQuestions.length + " questions");
     
-    // Forcer l'affichage immédiat pour tous
+    // Afficher le quiz
     let updatedRoom = (await roomRef.once('value')).val();
     await showQuiz(updatedRoom, code);
 }
@@ -491,10 +492,14 @@ async function startPart2(code) {
 
 // ========== CHARGER LA QUESTION SUIVANTE ==========
 async function loadNextQuestion(code, qIndex) {
+    // 🔥 Recharger les questions à chaque étape
+    let roomRef = db.ref(`rooms/${code}`);
+    let room = (await roomRef.once('value')).val();
+    
+    // Recharger les questions pour être sûr d'avoir les dernières
+    await loadQuestions(room.currentPart || 'partie1');
+    
     if(qIndex >= currentQuestions.length) {
-        let roomRef = db.ref(`rooms/${code}`);
-        let room = (await roomRef.once('value')).val();
-
         if(room.currentPart === 'partie1') {
             let total = room.players.reduce((s,p) => s + (p.score || 0), 0);
             await roomRef.update({ status: 'part2_unlocked', scorePart1: total });
@@ -520,17 +525,21 @@ async function loadNextQuestion(code, qIndex) {
         return;
     }
 
-    let roomRef = db.ref(`rooms/${code}`);
     await roomRef.update({ currentQuestion: qIndex });
-    let room = (await roomRef.once('value')).val();
-    await showQuiz(room, code);
+    let updatedRoom = (await roomRef.once('value')).val();
+    await showQuiz(updatedRoom, code);
 }
 
 // ========== AFFICHER LE QUIZ ==========
 async function showQuiz(room, code) {
+    // 🔥 Vérifier que la question existe
+    if(room.currentQuestion >= currentQuestions.length) {
+        await loadNextQuestion(code, room.currentQuestion);
+        return;
+    }
+    
     let q = currentQuestions[room.currentQuestion];
     if(!q) {
-        // Si la question n'existe pas, passer à la suivante
         await loadNextQuestion(code, room.currentQuestion + 1);
         return;
     }
