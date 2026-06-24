@@ -434,10 +434,11 @@ function watchRoom(code) {
 
             html += `</div>`;
 
-            if(isHost && playerCount === 4) {
+            // 🔥 MODIFICATION ICI : 2 joueurs minimum au lieu de 4
+            if(isHost && playerCount >= 2) {
                 html += `<button class="btn btn-green" onclick="startGame('${code}')">🎮 COMMENCER (${playerCount}/4)</button>`;
             } else if(isHost) {
-                html += `<p>⏳ En attente de 4 joueurs... (${playerCount}/4)</p>`;
+                html += `<p>⏳ En attente d'au moins 2 joueurs... (${playerCount}/4)</p>`;
             } else {
                 html += `<p>⏳ En attente que l'hôte commence (${playerCount}/4)</p>`;
             }
@@ -573,10 +574,8 @@ function startTimer() {
         if(timeLeft <= 0) {
             clearInterval(timerInterval);
             timerEl.textContent = "⏱️ 0s";
-            // Forcer la soumission des réponses
             document.querySelectorAll('.answer').forEach(b => b.disabled = true);
             toast("⏰ Temps écoulé !", true);
-            // Simuler une soumission automatique
             autoSubmitAnswers();
         }
     }, 1000);
@@ -587,18 +586,15 @@ async function autoSubmitAnswers() {
     let room = (await roomRef.once('value')).val();
     if(!room) return;
     
-    // Vérifier si tous ont répondu, sinon les marquer comme non répondues
     let allAnswered = room.players.every(p => p.answers && p.answers.includes(room.currentQuestion));
     if(!allAnswered) {
-        // Les joueurs qui n'ont pas répondu sont considérés comme ayant faux
         for(let p of room.players) {
             if(!p.answers || !p.answers.includes(room.currentQuestion)) {
-                p.lastAnswer = -1; // -1 = pas de réponse
+                p.lastAnswer = -1;
             }
         }
         await roomRef.set(room);
         
-        // Calculer les points
         let q = currentQuestions[room.currentQuestion];
         let wrongCount = room.players.filter(p => p.lastAnswer !== q.correct).length;
         
@@ -672,7 +668,6 @@ async function showQuiz(room, code) {
     html += `</div></div></div>`;
     document.getElementById('roomView').innerHTML = html;
     
-    // Démarrer le timer
     startTimer();
 }
 
@@ -698,10 +693,8 @@ async function submitAnswer(code, qIndex, ansIdx) {
 
     isAnswered = true;
     
-    // Désactiver tous les boutons
     document.querySelectorAll('.answer').forEach(b => b.disabled = true);
     
-    // Mettre en surbrillance la réponse choisie
     let selectedBtn = document.getElementById('answer_' + ansIdx);
     if(selectedBtn) selectedBtn.classList.add('selected');
 
