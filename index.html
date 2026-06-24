@@ -52,6 +52,8 @@
         .answer:hover { background: #ff3300; transform: scale(1.02); }
         .answer:disabled { background: #555; cursor: not-allowed; opacity: 0.5; }
         .answer.selected { background: #008800; border-color: #00ff00; }
+        .answer.correct-display { background: #008800; border-color: #00ff00; }
+        .answer.wrong-display { background: #cc0000; border-color: #ff0000; }
         .progress-bar { width: 100%; height: 12px; background: #333; border-radius: 10px; overflow: hidden; margin: 20px 0; }
         .progress-fill { height: 100%; background: linear-gradient(90deg, #ffcc00, #ff6600); width: 0%; transition: width 0.3s; }
         .timer { font-size: 2em; text-align: center; color: #ffcc00; margin: 10px 0; }
@@ -209,6 +211,7 @@ let currentPart = 'partie1';
 let timerInterval = null;
 let timeLeft = 30;
 let isAnswered = false;
+let gameSeed = Date.now();
 
 function initMusic() { bgMusic = document.getElementById('bgMusic'); if(bgMusic) bgMusic.volume = 0.2; }
 function toggleMusic() { if(!bgMusic) initMusic(); if(musicPlaying) { bgMusic.pause(); musicPlaying=false; document.getElementById('musicBtn').innerHTML='🎵'; } else { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }
@@ -244,12 +247,15 @@ function toast(msg, err) {
 
 function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 
-function shuffleArray(arr) {
-    for(let i = arr.length - 1; i > 0; i--) {
-        let j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
+function shuffleArray(arr, seed) {
+    let array = [...arr];
+    let s = seed || Date.now();
+    for(let i = array.length - 1; i > 0; i--) {
+        let j = Math.floor((s * 2654435761 + i * 101) % (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+        s = s + 1;
     }
-    return arr;
+    return array;
 }
 
 function showSection(section) {
@@ -301,11 +307,11 @@ async function postMessage() {
     if(!a||!m) { toast("Pseudo et message requis", true); return; }
     try {
         await db.ref('forum').push({ author:a, message:m, date:new Date().toLocaleString() });
-        toast("Message publié !");
+        toast("✅ Message publié !");
         document.getElementById('forumPseudo').value = '';
         document.getElementById('forumMessage').value = '';
         loadForum();
-    } catch(e) { toast("Erreur: "+e.message, true); }
+    } catch(e) { toast("❌ Erreur: "+e.message, true); }
 }
 
 async function createTeam() {
@@ -392,10 +398,11 @@ function enterRoom(code) {
 }
 
 function loadQuestions(part) {
+    let seed = gameSeed + (currentRoomCode ? parseInt(currentRoomCode) : 0);
     if(part === 'partie1') {
-        currentQuestions = shuffleArray([...PART1_QUESTIONS]);
+        currentQuestions = shuffleArray([...PART1_QUESTIONS], seed);
     } else {
-        currentQuestions = shuffleArray([...PART2_QUESTIONS]);
+        currentQuestions = shuffleArray([...PART2_QUESTIONS], seed + 999);
     }
     return currentQuestions;
 }
@@ -434,7 +441,6 @@ function watchRoom(code) {
 
             html += `</div>`;
 
-            // 🔥 MODIFICATION ICI : 2 joueurs minimum au lieu de 4
             if(isHost && playerCount >= 2) {
                 html += `<button class="btn btn-green" onclick="startGame('${code}')">🎮 COMMENCER (${playerCount}/4)</button>`;
             } else if(isHost) {
@@ -457,14 +463,15 @@ function watchRoom(code) {
                         <h2 style="color:#ffcc00;">🏆 PARTIE 1 TERMINÉE !</h2>
                         <div style="font-size:1.5em; margin:20px; color:#ffcc00;">Score: ${room.scorePart1} points</div>
             `;
-            if(room.scorePart1 >= 300) {
+            // 🔥 SEUIL BAISSÉ À 200 POINTS
+            if(room.scorePart1 >= 200) {
                 html2 += `
-                    <p style="color:#00ff00;">✅ Score ≥ 300 ! PARTIE 2 DÉBLOQUÉE !</p>
+                    <p style="color:#00ff00;">✅ Score ≥ 200 ! PARTIE 2 DÉBLOQUÉE !</p>
                     <button class="btn btn-green" onclick="startPart2('${code}')">🖼️ LANCER PARTIE 2</button>
                 `;
             } else {
                 html2 += `
-                    <p style="color:#ff6666;">❌ Score < 300. Partie terminée.</p>
+                    <p style="color:#ff6666;">❌ Score < 200. Partie terminée.</p>
                     <button class="btn" onclick="leaveRoom()">🏠 QUITTER</button>
                 `;
             }
@@ -486,6 +493,7 @@ async function startGame(code) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     
+    gameSeed = Date.now() + parseInt(code);
     loadQuestions('partie1');
     currentPart = 'partie1';
     let qCount = currentQuestions.length;
@@ -506,6 +514,7 @@ async function startPart2(code) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     
+    gameSeed = Date.now() + parseInt(code) + 999;
     loadQuestions('partie2');
     currentPart = 'partie2';
     let qCount = currentQuestions.length;
@@ -530,7 +539,7 @@ async function loadNextQuestion(code, qIndex) {
         if(room.currentPart === 'partie1') {
             let total = room.players.reduce((s,p) => s + (p.score || 0), 0);
             await roomRef.update({ status: 'part2_unlocked', scorePart1: total });
-            if(total >= 300) toast("✅ 300 points ! PARTIE 2 DÉBLOQUÉE !");
+            if(total >= 200) toast("✅ 200 points ! PARTIE 2 DÉBLOQUÉE !");
             else toast(`❌ Score: ${total} points. Partie terminée.`);
         } else {
             let totalScore = room.players.reduce((s,p) => s + (p.score || 0), 0);
@@ -696,7 +705,9 @@ async function submitAnswer(code, qIndex, ansIdx) {
     document.querySelectorAll('.answer').forEach(b => b.disabled = true);
     
     let selectedBtn = document.getElementById('answer_' + ansIdx);
-    if(selectedBtn) selectedBtn.classList.add('selected');
+    if(selectedBtn) {
+        selectedBtn.classList.add('selected');
+    }
 
     let updatedAnswers = [...(room.players[playerIndex].answers || []), qIndex];
     await roomRef.child(`players/${playerIndex}/answers`).set(updatedAnswers);
@@ -710,6 +721,16 @@ async function submitAnswer(code, qIndex, ansIdx) {
         
         let q = currentQuestions[qIndex];
         let wrongCount = updatedRoom.players.filter(p => p.lastAnswer !== q.correct).length;
+        
+        // Afficher les bonnes/mauvaises réponses
+        let qCorrect = q.correct;
+        document.querySelectorAll('.answer').forEach((el, idx) => {
+            if(idx === qCorrect) {
+                el.classList.add('correct-display');
+            } else if(room.players.some(p => p.lastAnswer === idx && p.lastAnswer !== qCorrect)) {
+                el.classList.add('wrong-display');
+            }
+        });
         
         if(wrongCount === 0) {
             for(let i = 0; i < updatedRoom.players.length; i++) {
@@ -730,7 +751,9 @@ async function submitAnswer(code, qIndex, ansIdx) {
             toast("❌ " + wrongCount + " FAUX ! 0 point pour tous.");
         }
         
-        await loadNextQuestion(code, qIndex + 1);
+        setTimeout(async () => {
+            await loadNextQuestion(code, qIndex + 1);
+        }, 2000);
     } else {
         let roomAfterAnswer = (await roomRef.once('value')).val();
         await showQuiz(roomAfterAnswer, code);
