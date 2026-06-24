@@ -11,7 +11,9 @@
             background: #0a0a0a;
             color: #fff;
             min-height: 100vh;
+            position: relative;
         }
+        /* FOND CORRIGÉ - CHEMIN ABSOLU */
         body::before {
             content: "";
             position: fixed;
@@ -19,7 +21,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('JOY-PURGE-GAME-/E6E73627-50E3-4391-A7CD-F78DF1523269.png');
+            background-image: url('/JOY-PURGE-GAME-/E6E73627-50E3-4391-A7CD-F78DF1523269.png');
             background-size: cover;
             background-position: center;
             opacity: 0.85;
@@ -76,9 +78,8 @@
         .password-box { max-width: 400px; margin: 40px auto; text-align: center; }
         .password-box input { text-align: center; font-size: 1.5em; letter-spacing: 5px; }
         
-        /* ========== ANIMATIONS ========== */
+        /* ANIMATIONS */
         @keyframes fadeOut { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
-        
         @keyframes gameStartPulse {
             0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,215,0,0.7); }
             70% { transform: scale(1.02); box-shadow: 0 0 30px 10px rgba(255,215,0,0.3); }
@@ -107,18 +108,12 @@
         .victory-card { animation: victoryGlow 1.5s ease infinite; border-color: #ffcc00 !important; }
         .defeat-card { border-color: #cc0000 !important; box-shadow: 0 0 30px rgba(204,0,0,0.5); }
         
-        @keyframes slideDown {
-            0% { opacity: 0; transform: translateY(-30px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        .slide-down { animation: slideDown 0.5s ease forwards; }
-        
         @media (max-width: 700px) { .answers { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 <div class="container">
-    <a href="JOY-PURGE-GAME-/admin.html" class="admin-link">👑 ADMIN</a>
+    <a href="/JOY-PURGE-GAME-/admin.html" class="admin-link">👑 ADMIN</a>
     <div class="music-btn" id="musicBtn" onclick="toggleMusic()">🎵</div>
 
     <div class="card" style="text-align:center;">
@@ -171,7 +166,7 @@
     </div>
 </div>
 
-<audio id="bgMusic" loop><source src="JOY-PURGE-GAME-/song.mp3.m4a" type="audio/mp4"></audio>
+<audio id="bgMusic" loop><source src="/JOY-PURGE-GAME-/song.mp3.m4a" type="audio/mp4"></audio>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -215,26 +210,26 @@ const PART1_QUESTIONS = [
 ];
 
 const PART2_QUESTIONS = [
-    { text: "Qui est ce purgeur ?", image: "JOY-PURGE-GAME-/4492E8E3-4096-4810-8833-89039DB94EE0.png", answers: ["SIGHARAKI WORKER", "ARKHA CORVUS", "MONARQUE DES OMBRES", "NOLA D NAXE"], correct: 2 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/8F915A3B-0BB7-4BD3-9F35-3D91AC3EBDEA.jpeg", answers: ["ELYNA ZETSU", "SHAÏNA", "FLEUR SAUVAGE", "PRINCESSE EMMA"], correct: 2 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/00A56991-DC7C-4DB7-8079-272737DDE631.png", answers: ["BLACK SAIYAN", "CHRISTIAN D ESCANOR", "JOY BOY", "SUPRÊME DESTRUCTOR"], correct: 1 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/D5F88138-BAD7-4F49-A552-FC432D673FBC.png", answers: ["FANTÔME GHOST", "PLUNDERER", "PERFECTION AKATSUKI", "MUZAN KILLER"], correct: 3 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/D7C2168C-1037-481D-8AE3-EFE440E632E2.png", answers: ["SHIRO KAGE", "WILLIAM MORYARTY", "Mr AURA", "CIEL STARHIVE"], correct: 1 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/A45BAFE2-BF9F-4DC0-9654-A35A3961E215.png", answers: ["LIVAÏ ACKERMAN", "JOY BOY", "JOYEUX", "INCONNU BOY"], correct: 1 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/D528BF30-D580-4660-B303-92BBB696ACCB.png", answers: ["MADARA UCHIWA", "BENJAMIN UCHIWA", "ZEAL BIG DEAL", "ARATA"], correct: 2 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/691FF3E1-1015-411E-8466-A96C2BD06A6B.png", answers: ["Mr LEY", "TOBI", "DEVI PRIME", "MUICHIRO"], correct: 2 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/BB6418D4-FFBE-4144-A3D6-500B800F59A5.png", answers: ["Mr PERFECTION", "LIGHT EYES", "Mr NIGHT EYES", "JIN WORKER"], correct: 2 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/DBD200E4-8485-4696-9F15-6E1FCDD12257.png", answers: ["THANOS CDX", "ARKHA CORVUS", "L'OMBRE SK2", "MANDELA"], correct: 1 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/2990405B-66CA-4F98-B7DF-2D301E0E13F9.png", answers: ["CIEL STARHIVE", "HOMME VOILÉ", "BENNY HADÉS", "SHIROKAGE"], correct: 2 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/E3AEFAE5-592C-4834-9963-39616F21CB09.png", answers: ["JOKER PRIME", "THE BOSS SHELBY", "REDIX KARA", "KAKASHI KARA"], correct: 3 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/3F260E3A-4E3C-49EA-987A-327761E0BF33.png", answers: ["WILLIAM MORYARTY", "BLOOD ANGEL", "SERAPHIN", "DAISUKE KAMBE"], correct: 3 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/AF82D6C7-5DEC-478A-AE13-962ABFAA016D.png", answers: ["KLAUS MIKAELSON", "LUMY GRIMM", "ICHIGO KILLER", "TMP RIMKUS"], correct: 2 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/AAEF68DB-7E34-43E4-BC25-29EE51ACFA11.png", answers: ["SHADOW", "GABIMARU", "ORACHIMARU", "KYOTAKA"], correct: 3 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/2E663876-3DAE-4E40-B3B2-92C008EE22D6.png", answers: ["NABU ZETSU", "QUEEN KILLER", "MAÏNA SILVERS", "SUIJINA"], correct: 2 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/0FBC81ED-3931-4905-83A6-C8BC0120312B.png", answers: ["QUEEN Dija", "HINATA ZETSU", "ALEXA", "OLIVARES"], correct: 1 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/A7AF9653-35C8-4BB4-8D24-3F356C8A84C1.png", answers: ["JOY BOY", "BLACK GOKU", "BLACK TOBI", "TOMMY GRIMM"], correct: 1 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/4EC3B7AD-3150-4AE6-931D-99635AA9585F.png", answers: ["SAÏTAMA", "ARATA", "GOJO ASTRIOUS", "AKASHI"], correct: 2 },
-    { text: "Qui est-ce ?", image: "JOY-PURGE-GAME-/F80BFCD1-030B-470C-BB08-14CE31C96AC7.png", answers: ["POUTINE ZETSU", "BLACK TOBI ZETSU", "L'INCARNATION AKATSUKI", "Mr JOKER PRIME"], correct: 1 }
+    { text: "Qui est ce purgeur ?", image: "/JOY-PURGE-GAME-/4492E8E3-4096-4810-8833-89039DB94EE0.png", answers: ["SIGHARAKI WORKER", "ARKHA CORVUS", "MONARQUE DES OMBRES", "NOLA D NAXE"], correct: 2 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/8F915A3B-0BB7-4BD3-9F35-3D91AC3EBDEA.jpeg", answers: ["ELYNA ZETSU", "SHAÏNA", "FLEUR SAUVAGE", "PRINCESSE EMMA"], correct: 2 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/00A56991-DC7C-4DB7-8079-272737DDE631.png", answers: ["BLACK SAIYAN", "CHRISTIAN D ESCANOR", "JOY BOY", "SUPRÊME DESTRUCTOR"], correct: 1 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/D5F88138-BAD7-4F49-A552-FC432D673FBC.png", answers: ["FANTÔME GHOST", "PLUNDERER", "PERFECTION AKATSUKI", "MUZAN KILLER"], correct: 3 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/D7C2168C-1037-481D-8AE3-EFE440E632E2.png", answers: ["SHIRO KAGE", "WILLIAM MORYARTY", "Mr AURA", "CIEL STARHIVE"], correct: 1 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/A45BAFE2-BF9F-4DC0-9654-A35A3961E215.png", answers: ["LIVAÏ ACKERMAN", "JOY BOY", "JOYEUX", "INCONNU BOY"], correct: 1 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/D528BF30-D580-4660-B303-92BBB696ACCB.png", answers: ["MADARA UCHIWA", "BENJAMIN UCHIWA", "ZEAL BIG DEAL", "ARATA"], correct: 2 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/691FF3E1-1015-411E-8466-A96C2BD06A6B.png", answers: ["Mr LEY", "TOBI", "DEVI PRIME", "MUICHIRO"], correct: 2 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/BB6418D4-FFBE-4144-A3D6-500B800F59A5.png", answers: ["Mr PERFECTION", "LIGHT EYES", "Mr NIGHT EYES", "JIN WORKER"], correct: 2 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/DBD200E4-8485-4696-9F15-6E1FCDD12257.png", answers: ["THANOS CDX", "ARKHA CORVUS", "L'OMBRE SK2", "MANDELA"], correct: 1 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/2990405B-66CA-4F98-B7DF-2D301E0E13F9.png", answers: ["CIEL STARHIVE", "HOMME VOILÉ", "BENNY HADÉS", "SHIROKAGE"], correct: 2 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/E3AEFAE5-592C-4834-9963-39616F21CB09.png", answers: ["JOKER PRIME", "THE BOSS SHELBY", "REDIX KARA", "KAKASHI KARA"], correct: 3 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/3F260E3A-4E3C-49EA-987A-327761E0BF33.png", answers: ["WILLIAM MORYARTY", "BLOOD ANGEL", "SERAPHIN", "DAISUKE KAMBE"], correct: 3 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/AF82D6C7-5DEC-478A-AE13-962ABFAA016D.png", answers: ["KLAUS MIKAELSON", "LUMY GRIMM", "ICHIGO KILLER", "TMP RIMKUS"], correct: 2 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/AAEF68DB-7E34-43E4-BC25-29EE51ACFA11.png", answers: ["SHADOW", "GABIMARU", "ORACHIMARU", "KYOTAKA"], correct: 3 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/2E663876-3DAE-4E40-B3B2-92C008EE22D6.png", answers: ["NABU ZETSU", "QUEEN KILLER", "MAÏNA SILVERS", "SUIJINA"], correct: 2 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/0FBC81ED-3931-4905-83A6-C8BC0120312B.png", answers: ["QUEEN Dija", "HINATA ZETSU", "ALEXA", "OLIVARES"], correct: 1 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/A7AF9653-35C8-4BB4-8D24-3F356C8A84C1.png", answers: ["JOY BOY", "BLACK GOKU", "BLACK TOBI", "TOMMY GRIMM"], correct: 1 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/4EC3B7AD-3150-4AE6-931D-99635AA9585F.png", answers: ["SAÏTAMA", "ARATA", "GOJO ASTRIOUS", "AKASHI"], correct: 2 },
+    { text: "Qui est-ce ?", image: "/JOY-PURGE-GAME-/F80BFCD1-030B-470C-BB08-14CE31C96AC7.png", answers: ["POUTINE ZETSU", "BLACK TOBI ZETSU", "L'INCARNATION AKATSUKI", "Mr JOKER PRIME"], correct: 1 }
 ];
 
 // ========== VARIABLES ==========
@@ -409,8 +404,7 @@ async function joinTeam() {
         let room = (await roomRef.once('value')).val();
         if(!room) { toast("❌ Salon introuvable", true); return; }
         if(room.players.length >= 4) { toast("❌ Salon complet (4/4)", true); return; }
-        // 🔥 CORRECTION : Un joueur peut rejoindre même si la partie a commencé
-        // Il verra la question en cours
+        // Autoriser à rejoindre même si la partie a commencé
 
         let photoUrl = null;
         if(photoFile) {
@@ -525,12 +519,12 @@ function watchRoom(code) {
             if(currentQuestions.length === 0) {
                 loadQuestions(room.currentPart || 'partie1');
             }
-            // 🔥 Forcer l'affichage du quiz pour TOUS les joueurs
+            // 🔥 FORCER l'affichage du quiz pour TOUS
             await showQuiz(room, code);
         }
         else if(room.status === 'part2_unlocked') {
             let html2 = `
-                <div class="quiz-area" style="background-image: url('JOY-PURGE-GAME-/A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center; text-align:center;">
+                <div class="quiz-area" style="background-image: url('/JOY-PURGE-GAME-/A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center; text-align:center;">
                     <div style="background: rgba(0,0,0,0.7); padding: 20px; border-radius: 15px;">
                         <h2 style="color:#ffcc00;">🏆 PARTIE 1 TERMINÉE !</h2>
                         <div style="font-size:1.5em; margin:20px; color:#ffcc00;">Score: ${room.scorePart1} points</div>
@@ -578,7 +572,6 @@ async function startGame(code) {
         players: updatedPlayers
     });
     
-    // 🔥 Effet visuel pour tous les joueurs
     showGameStartEffect();
     toast("🎮 Partie 1 démarrée ! " + qCount + " questions");
 }
@@ -726,7 +719,6 @@ async function autoSubmitAnswers() {
 }
 
 async function showQuiz(room, code) {
-    // 🔥 Vérifier si la question est valide
     if(room.currentQuestion >= currentQuestions.length) {
         await loadNextQuestion(code, room.currentQuestion);
         return;
@@ -876,7 +868,6 @@ function showFinalResults(room) {
     let sp1 = room.scorePart1 || 0;
     let sp2 = room.scorePart2 || 0;
     
-    // 🔥 Effets de victoire/défaite
     let isVictory = total >= 200;
 
     let html = `
@@ -900,7 +891,6 @@ function showFinalResults(room) {
         `;
     });
 
-    // 🔥 Message de victoire/défaite
     if(isVictory) {
         html += `
             </div>
@@ -910,7 +900,6 @@ function showFinalResults(room) {
             </div>
             <button class="btn btn-green" onclick="startPart2('${currentRoomCode}')">🖼️ LANCER PARTIE 2</button>
         `;
-        // Déclencher les confettis pour la victoire
         setTimeout(() => triggerConfetti(), 500);
     } else {
         html += `
