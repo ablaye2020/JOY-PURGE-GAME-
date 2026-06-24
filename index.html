@@ -54,6 +54,7 @@
         .answer.selected { background: #008800; border-color: #00ff00; }
         .answer.correct-display { background: #008800; border-color: #00ff00; }
         .answer.wrong-display { background: #cc0000; border-color: #ff0000; }
+        .answer.timeout { background: #555; border-color: #888; opacity: 0.5; text-decoration: line-through; }
         .progress-bar { width: 100%; height: 12px; background: #333; border-radius: 10px; overflow: hidden; margin: 20px 0; }
         .progress-fill { height: 100%; background: linear-gradient(90deg, #ffcc00, #ff6600); width: 0%; transition: width 0.3s; }
         .timer { font-size: 2em; text-align: center; color: #ffcc00; margin: 10px 0; }
@@ -409,6 +410,8 @@ function loadQuestions(part) {
 
 function watchRoom(code) {
     let roomRef = db.ref(`rooms/${code}`);
+    if(roomListener) roomListener();
+    
     roomListener = roomRef.on('value', async (snap) => {
         let room = snap.val();
         if(!room) { 
@@ -420,6 +423,7 @@ function watchRoom(code) {
         let isHost = room.players[0]?.id === currentPlayerId;
         let playerCount = room.players.length;
 
+        // SALLE D'ATTENTE
         if(room.status === 'waiting') {
             let html = `
                 <div style="text-align:center;">
@@ -452,10 +456,15 @@ function watchRoom(code) {
             html += `<button class="btn" onclick="leaveRoom()">❌ QUITTER</button></div>`;
             document.getElementById('roomView').innerHTML = html;
         }
+        // QUIZ
         else if(room.status === 'playing') {
-            if(currentQuestions.length === 0) loadQuestions(room.currentPart || 'partie1');
+            if(currentQuestions.length === 0) {
+                loadQuestions(room.currentPart || 'partie1');
+            }
+            // Forcer l'affichage du quiz pour tout le monde
             await showQuiz(room, code);
         }
+        // PARTIE 2 DÉBLOQUÉE
         else if(room.status === 'part2_unlocked') {
             let html2 = `
                 <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center; text-align:center;">
@@ -463,7 +472,6 @@ function watchRoom(code) {
                         <h2 style="color:#ffcc00;">🏆 PARTIE 1 TERMINÉE !</h2>
                         <div style="font-size:1.5em; margin:20px; color:#ffcc00;">Score: ${room.scorePart1} points</div>
             `;
-            // 🔥 SEUIL BAISSÉ À 200 POINTS
             if(room.scorePart1 >= 200) {
                 html2 += `
                     <p style="color:#00ff00;">✅ Score ≥ 200 ! PARTIE 2 DÉBLOQUÉE !</p>
@@ -478,6 +486,7 @@ function watchRoom(code) {
             html2 += `</div></div>`;
             document.getElementById('roomView').innerHTML = html2;
         }
+        // RÉSULTATS FINAUX
         else if(room.status === 'finished') {
             showFinalResults(room);
         }
@@ -498,6 +507,7 @@ async function startGame(code) {
     currentPart = 'partie1';
     let qCount = currentQuestions.length;
     
+    // Réinitialiser les réponses des joueurs
     let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
     
     await roomRef.update({
@@ -583,8 +593,13 @@ function startTimer() {
         if(timeLeft <= 0) {
             clearInterval(timerInterval);
             timerEl.textContent = "⏱️ 0s";
-            document.querySelectorAll('.answer').forEach(b => b.disabled = true);
-            toast("⏰ Temps écoulé !", true);
+            document.querySelectorAll('.answer').forEach(b => {
+                b.disabled = true;
+                if(!b.classList.contains('selected')) {
+                    b.classList.add('timeout');
+                }
+            });
+            toast("⏰ Temps écoulé ! Les non-répondants sont exclus !", true);
             autoSubmitAnswers();
         }
     }, 1000);
@@ -595,40 +610,59 @@ async function autoSubmitAnswers() {
     let room = (await roomRef.once('value')).val();
     if(!room) return;
     
-    let allAnswered = room.players.every(p => p.answers && p.answers.includes(room.currentQuestion));
-    if(!allAnswered) {
-        for(let p of room.players) {
-            if(!p.answers || !p.answers.includes(room.currentQuestion)) {
-                p.lastAnswer = -1;
-            }
+    let q = currentQuestions[room.currentQuestion];
+    
+    // Marquer les joueurs qui n'ont pas répondu (lastAnswer = null)
+    for(let p of room.players) {
+        if(!p.answers || !p.answers.includes(room.currentQuestion)) {
+            p.lastAnswer = -1; // -1 = exclus
         }
-        await roomRef.set(room);
-        
-        let q = currentQuestions[room.currentQuestion];
-        let wrongCount = room.players.filter(p => p.lastAnswer !== q.correct).length;
-        
-        if(wrongCount === 0) {
-            for(let i = 0; i < room.players.length; i++) {
-                let newScore = (room.players[i].score || 0) + 10;
+    }
+    await roomRef.set(room);
+    
+    let updatedRoom = (await roomRef.once('value')).val();
+    let activePlayers = updatedRoom.players.filter(p => p.lastAnswer !== -1);
+    let wrongCount = activePlayers.filter(p => p.lastAnswer !== q.correct).length;
+    let totalActive = activePlayers.length;
+    
+    if(totalActive === 0) {
+        toast("⏰ Personne n'a répondu ! 0 point pour tous.");
+    } else if(wrongCount === 0) {
+        // Tous ceux qui ont répondu ont juste
+        for(let i = 0; i < updatedRoom.players.length; i++) {
+            let p = updatedRoom.players[i];
+            if(p.lastAnswer === q.correct) {
+                let newScore = (p.score || 0) + 10;
                 await roomRef.child(`players/${i}/score`).set(newScore);
             }
-            toast("✅ TOUS JUSTES ! +10 points !");
-        } else if(wrongCount === 1) {
-            for(let i = 0; i < room.players.length; i++) {
-                let p = room.players[i];
-                if(p.lastAnswer === q.correct) {
-                    let newScore = (p.score || 0) + 5;
-                    await roomRef.child(`players/${i}/score`).set(newScore);
-                }
-            }
-            toast("⚠️ 1 FAUX ! Ceux qui ont juste gagnent 5 points.");
-        } else {
-            toast("❌ " + wrongCount + " FAUX ! 0 point pour tous.");
         }
-        
-        clearInterval(timerInterval);
-        await loadNextQuestion(currentRoomCode, room.currentQuestion + 1);
+        toast("✅ TOUS LES RÉPONDANTS JUSTES ! +10 points !");
+    } else if(wrongCount === 1) {
+        // Un seul faux parmi les répondants
+        for(let i = 0; i < updatedRoom.players.length; i++) {
+            let p = updatedRoom.players[i];
+            if(p.lastAnswer === q.correct) {
+                let newScore = (p.score || 0) + 5;
+                await roomRef.child(`players/${i}/score`).set(newScore);
+            }
+        }
+        toast("⚠️ 1 FAUX parmi les répondants ! Ceux qui ont juste gagnent 5 points.");
+    } else {
+        toast("❌ " + wrongCount + " FAUX parmi les répondants ! 0 point pour tous.");
     }
+    
+    // Afficher les bonnes réponses
+    document.querySelectorAll('.answer').forEach((el, idx) => {
+        if(idx === q.correct) {
+            el.classList.add('correct-display');
+        } else if(room.players.some(p => p.lastAnswer === idx && p.lastAnswer !== q.correct)) {
+            el.classList.add('wrong-display');
+        }
+    });
+    
+    setTimeout(async () => {
+        await loadNextQuestion(currentRoomCode, room.currentQuestion + 1);
+    }, 2000);
 }
 
 async function showQuiz(room, code) {
@@ -855,3 +889,4 @@ loadForum();
 </script>
 </body>
 </html>
+J O Y ~ P U R G E ~ G A M E
