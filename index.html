@@ -32,7 +32,8 @@
         .btn { background: #ff3300; color: #ffcc00; border: none; padding: 12px 25px; border-radius: 30px; cursor: pointer; margin: 5px; font-weight: bold; font-size: 16px; }
         .btn-green { background: #008800; }
         .btn-blue { background: #0066cc; }
-        input, textarea { width: 100%; padding: 12px; background: #1a1a1a; border: 2px solid #ff6600; border-radius: 10px; color: white; margin: 8px 0; font-size: 16px; }
+        input { width: 100%; padding: 12px; background: #1a1a1a; border: 2px solid #ff6600; border-radius: 10px; color: white; margin: 8px 0; font-size: 16px; }
+        input[type="file"] { padding: 8px; background: #1a1a1a; border: 2px solid #ff6600; border-radius: 10px; color: white; margin: 8px 0; }
         .nav { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
         .nav-btn { background: #222; border: 2px solid #ff6600; padding: 10px 20px; border-radius: 30px; color: #ffcc00; cursor: pointer; }
         .nav-btn.active { background: #ff3300; }
@@ -46,16 +47,7 @@
         .team-card { background: rgba(0,0,0,0.6); border-left: 4px solid #ffcc00; padding: 12px; margin: 8px 0; display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; }
         .quiz-area { background: rgba(0,0,0,0.95); border-radius: 20px; padding: 25px; }
         .question-text { font-size: 1.2em; text-align: center; margin: 20px 0; color: #ffcc00; }
-        .question-img {
-            width: 100%;
-            height: 280px;
-            object-fit: cover;
-            object-position: center 20%;
-            border-radius: 15px;
-            background: #0a0a0a;
-            margin: 15px 0;
-            border: 2px solid #ff6600;
-        }
+        .question-img { width: 100%; max-height: 280px; object-fit: cover; object-position: center 20%; border-radius: 15px; background: #0a0a0a; margin: 15px 0; border: 2px solid #ff6600; }
         .answers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
         .answer { background: #333; border: 2px solid #ff6600; padding: 15px; border-radius: 15px; cursor: pointer; text-align: center; transition: 0.2s; }
         .answer:hover { background: #ff3300; transform: scale(1.02); }
@@ -74,39 +66,21 @@
         .music-btn { position: fixed; bottom: 20px; right: 20px; background: #000; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #ff6600; z-index: 200; font-size: 22px; }
         .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #ffcc00; color: #000; padding: 10px 20px; border-radius: 30px; z-index: 1000; font-weight: bold; animation: fadeOut 2s; }
         .photo-preview { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #ffcc00; margin-top: 8px; }
-        .password-box { max-width: 400px; margin: 40px auto; text-align: center; }
-        .password-box input { text-align: center; font-size: 1.5em; letter-spacing: 5px; }
+        .auth-box { max-width: 500px; margin: 20px auto; padding: 25px; background: rgba(0,0,0,0.85); border: 2px solid #ff6600; border-radius: 20px; }
+        .auth-box h3 { color: #ffcc00; text-align: center; margin-bottom: 15px; }
+        .auth-box input { margin: 8px 0; }
+        .auth-box .btn { width: 100%; margin-top: 8px; }
+        .divider { border: none; border-top: 1px solid #ff6600; margin: 20px 0; }
+        .team-name-display { font-size: 1.8em; color: #ffcc00; text-align: center; font-weight: bold; margin: 10px 0; }
         
-        /* ANIMATIONS */
         @keyframes fadeOut { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
-        @keyframes gameStartPulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,215,0,0.7); }
-            70% { transform: scale(1.02); box-shadow: 0 0 30px 10px rgba(255,215,0,0.3); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,215,0,0); }
-        }
+        @keyframes gameStartPulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,215,0,0.7); } 70% { transform: scale(1.02); box-shadow: 0 0 30px 10px rgba(255,215,0,0.3); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,215,0,0); } }
         .game-starting { animation: gameStartPulse 0.8s ease 3; border-color: #ffcc00 !important; }
-        
-        @keyframes confettiFall {
-            0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-        }
-        .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            border-radius: 2px;
-            z-index: 999;
-            pointer-events: none;
-            animation: confettiFall linear forwards;
-        }
-        
-        @keyframes victoryGlow {
-            0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.5); }
-            50% { box-shadow: 0 0 60px rgba(255,215,0,0.9), 0 0 120px rgba(255,215,0,0.4); }
-        }
+        @keyframes confettiFall { 0% { transform: translateY(-100px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+        .confetti { position: fixed; width: 10px; height: 10px; border-radius: 2px; z-index: 999; pointer-events: none; animation: confettiFall linear forwards; }
+        @keyframes victoryGlow { 0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.5); } 50% { box-shadow: 0 0 60px rgba(255,215,0,0.9), 0 0 120px rgba(255,215,0,0.4); } }
         .victory-card { animation: victoryGlow 1.5s ease infinite; border-color: #ffcc00 !important; }
         .defeat-card { border-color: #cc0000 !important; box-shadow: 0 0 30px rgba(204,0,0,0.5); }
-        
         @media (max-width: 700px) { .answers { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -129,24 +103,45 @@
     <div id="jeu" class="section active">
         <div class="card">
             <h2>🎮 JOY PURGE GAME</h2>
-            <div id="lobbyView">
-                <h3>🚀 CRÉER UN SALON</h3>
-                <input type="text" id="teamName" placeholder="Nom de l'équipe">
-                <input type="text" id="playerName" placeholder="Ton pseudo">
-                <input type="file" id="playerPhoto" accept="image/*">
-                <div id="photoPreview1"></div>
-                <button class="btn btn-green" onclick="createTeam()" style="width:100%;">🔥 CRÉER</button>
-
-                <hr style="border-color:#ff6600; margin:30px 0;">
-
-                <h3>🔑 REJOINDRE UN SALON</h3>
-                <input type="text" id="joinCode" maxlength="4" placeholder="Code 4 chiffres">
-                <input type="text" id="joinPlayerName" placeholder="Ton pseudo">
-                <input type="file" id="joinPlayerPhoto" accept="image/*">
-                <div id="photoPreview2"></div>
-                <button class="btn" onclick="joinTeam()" style="width:100%;">🔐 REJOINDRE</button>
+            
+            <!-- ÉCRAN D'ACCUEIL -->
+            <div id="homeScreen">
+                <div class="auth-box">
+                    <h3>🚀 CRÉER UNE ÉQUIPE (HÔTE)</h3>
+                    <input type="text" id="teamNameCreate" placeholder="Nom de l'équipe">
+                    <input type="password" id="teamPasswordCreate" placeholder="Mot de passe (pour te reconnecter)">
+                    <input type="text" id="hostNameCreate" placeholder="Ton pseudo (hôte)">
+                    <input type="file" id="hostPhotoCreate" accept="image/*">
+                    <div id="hostPhotoPreview"></div>
+                    <button class="btn btn-green" onclick="createTeam()">🔥 CRÉER L'ÉQUIPE</button>
+                    
+                    <div class="divider"></div>
+                    
+                    <h3>🔐 RECONNEXION (HÔTE)</h3>
+                    <input type="text" id="teamNameReconnect" placeholder="Nom de l'équipe">
+                    <input type="password" id="teamPasswordReconnect" placeholder="Mot de passe">
+                    <button class="btn btn-blue" onclick="reconnectTeam()">🔐 SE RECONNECTER</button>
+                    
+                    <div class="divider"></div>
+                    
+                    <h3>🔑 REJOINDRE UNE ÉQUIPE (JOUEUR)</h3>
+                    <input type="text" id="joinCode" maxlength="4" placeholder="Code à 4 chiffres">
+                    <input type="text" id="joinPlayerName" placeholder="Ton pseudo">
+                    <input type="file" id="joinPlayerPhoto" accept="image/*">
+                    <div id="joinPhotoPreview"></div>
+                    <button class="btn" onclick="joinTeam()">🔐 REJOINDRE</button>
+                </div>
             </div>
-            <div id="roomView" style="display:none;"></div>
+
+            <!-- SALLE D'ATTENTE -->
+            <div id="lobbyScreen" style="display:none;">
+                <div class="team-name-display" id="teamNameDisplay"></div>
+                <div id="lobbyView"></div>
+                <button class="btn" onclick="leaveTeam()" style="margin-top:15px; background:#555;">🚪 QUITTER</button>
+            </div>
+
+            <!-- JEU -->
+            <div id="gameScreen" style="display:none;"></div>
         </div>
     </div>
 
@@ -184,7 +179,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ========== PARTIE 1 ==========
+// ========== QUESTIONS ==========
 const PART1_QUESTIONS = [
     { text: "Qui est le fondateur du clan GHOST ?", answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"], correct: 1 },
     { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "DIANNY", "NIGHT"], correct: 1 },
@@ -208,7 +203,6 @@ const PART1_QUESTIONS = [
     { text: "Qui était le chancelier de l'OMP ?", answers: ["ANGEL", "LORD IVAR", "SERAPHIN", "ANDRÉ"], correct: 1 }
 ];
 
-// ========== PARTIE 2 ==========
 const PART2_QUESTIONS = [
     { text: "Qui est ce purgeur ?", image: "4492E8E3-4096-4810-8833-89039DB94EE0.png", answers: ["SIGHARAKI WORKER", "ARKHA CORVUS", "MONARQUE DES OMBRES", "NOLA D NAXE"], correct: 2 },
     { text: "Qui est-ce ?", image: "8F915A3B-0BB7-4BD3-9F35-3D91AC3EBDEA.jpeg", answers: ["ELYNA ZETSU", "SHAÏNA", "FLEUR SAUVAGE", "PRINCESSE EMMA"], correct: 2 },
@@ -248,6 +242,8 @@ let timerInterval = null;
 let timeLeft = 30;
 let isAnswered = false;
 let gameSeed = Date.now();
+let currentTeamName = '';
+let isHost = false;
 
 function initMusic() { bgMusic = document.getElementById('bgMusic'); if(bgMusic) bgMusic.volume = 0.2; }
 function toggleMusic() { if(!bgMusic) initMusic(); if(musicPlaying) { bgMusic.pause(); musicPlaying=false; document.getElementById('musicBtn').innerHTML='🎵'; } else { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }
@@ -268,8 +264,8 @@ function previewPhoto(input, previewId) {
     }
 }
 
-document.getElementById('playerPhoto')?.addEventListener('change', (e) => previewPhoto(e.target, 'photoPreview1'));
-document.getElementById('joinPlayerPhoto')?.addEventListener('change', (e) => previewPhoto(e.target, 'photoPreview2'));
+document.getElementById('hostPhotoCreate')?.addEventListener('change', (e) => previewPhoto(e.target, 'hostPhotoPreview'));
+document.getElementById('joinPlayerPhoto')?.addEventListener('change', (e) => previewPhoto(e.target, 'joinPhotoPreview'));
 
 function toast(msg, err) {
     let t = document.createElement('div');
@@ -283,17 +279,6 @@ function toast(msg, err) {
 
 function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 
-function shuffleArray(arr, seed) {
-    let array = [...arr];
-    let s = seed || Date.now();
-    for(let i = array.length - 1; i > 0; i--) {
-        let j = Math.floor((s * 2654435761 + i * 101) % (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-        s = s + 1;
-    }
-    return array;
-}
-
 function showSection(section) {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById(section).classList.add('active');
@@ -305,7 +290,7 @@ function showSection(section) {
 
 async function loadRanking() {
     try {
-        let snap = await db.ref('teams/partie1').once('value');
+        let snap = await db.ref('teams').once('value');
         let teams = [];
         snap.forEach(c => teams.push({ id: c.key, ...c.val() }));
         teams.sort((a,b) => (b.score||0) - (a.score||0));
@@ -350,13 +335,37 @@ async function postMessage() {
     } catch(e) { toast("❌ Erreur: "+e.message, true); }
 }
 
+function shuffleArray(arr, seed) {
+    let array = [...arr];
+    let s = seed || Date.now();
+    for(let i = array.length - 1; i > 0; i--) {
+        let j = Math.floor((s * 2654435761 + i * 101) % (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+        s = s + 1;
+    }
+    return array;
+}
+
+function loadQuestions(part) {
+    let seed = gameSeed + (currentRoomCode ? parseInt(currentRoomCode) : 0);
+    if(part === 'partie1') {
+        currentQuestions = shuffleArray([...PART1_QUESTIONS], seed);
+    } else {
+        currentQuestions = shuffleArray([...PART2_QUESTIONS], seed + 999);
+    }
+    return currentQuestions;
+}
+
+// ========== CRÉER UNE ÉQUIPE (HÔTE) ==========
 async function createTeam() {
-    let teamName = document.getElementById('teamName').value.trim();
-    let playerName = document.getElementById('playerName').value.trim();
-    let photoFile = document.getElementById('playerPhoto').files[0];
+    let teamName = document.getElementById('teamNameCreate').value.trim();
+    let password = document.getElementById('teamPasswordCreate').value.trim();
+    let hostName = document.getElementById('hostNameCreate').value.trim();
+    let photoFile = document.getElementById('hostPhotoCreate').files[0];
 
     if(!teamName) { toast("❌ Nom de l'équipe requis", true); return; }
-    if(!playerName) { toast("❌ Ton pseudo requis", true); return; }
+    if(password.length < 4) { toast("❌ Mot de passe (min 4 caractères)", true); return; }
+    if(!hostName) { toast("❌ Ton pseudo requis", true); return; }
 
     let code = Math.floor(1000 + Math.random() * 9000).toString();
     let roomRef = db.ref(`rooms/${code}`);
@@ -376,20 +385,53 @@ async function createTeam() {
 
         await roomRef.set({
             teamName: teamName,
-            players: [{ id: currentPlayerId, name: playerName, photo: photoUrl, score: 0, answers: [] }],
+            password: password,
+            code: code,
+            players: [{ id: currentPlayerId, name: hostName, photo: photoUrl, score: 0, answers: [] }],
             status: 'waiting',
             currentQuestion: 0,
             scorePart1: 0,
             createdAt: Date.now()
         });
 
-        toast(`✅ Salon "${teamName}" créé ! Code: ${code}`);
+        currentTeamName = teamName;
+        isHost = true;
+        toast(`✅ Équipe "${teamName}" créée ! Code: ${code}`);
         enterRoom(code);
     } catch(e) {
         toast("❌ Erreur: " + e.message, true);
     }
 }
 
+// ========== RECONNEXION (HÔTE) ==========
+async function reconnectTeam() {
+    let teamName = document.getElementById('teamNameReconnect').value.trim();
+    let password = document.getElementById('teamPasswordReconnect').value.trim();
+
+    if(!teamName || !password) { toast("❌ Nom d'équipe et mot de passe requis", true); return; }
+
+    try {
+        let snap = await db.ref('rooms').orderByChild('teamName').equalTo(teamName).once('value');
+        let room = null;
+        let roomKey = null;
+        snap.forEach(c => {
+            room = c.val();
+            roomKey = c.key;
+        });
+
+        if(!room) { toast("❌ Équipe introuvable", true); return; }
+        if(room.password !== password) { toast("❌ Mot de passe incorrect", true); return; }
+
+        currentTeamName = teamName;
+        isHost = true;
+        toast(`✅ Reconnexion réussie ! Code: ${roomKey}`);
+        enterRoom(roomKey);
+    } catch(e) {
+        toast("❌ Erreur: " + e.message, true);
+    }
+}
+
+// ========== REJOINDRE UNE ÉQUIPE (JOUEUR) ==========
 async function joinTeam() {
     let code = document.getElementById('joinCode').value.trim();
     let playerName = document.getElementById('joinPlayerName').value.trim();
@@ -403,8 +445,7 @@ async function joinTeam() {
     try {
         let room = (await roomRef.once('value')).val();
         if(!room) { toast("❌ Salon introuvable", true); return; }
-        if(room.players.length >= 4) { toast("❌ Salon complet (4/4)", true); return; }
-        // Autoriser à rejoindre même si la partie a commencé
+        if(room.players.length >= 2) { toast("❌ Équipe complète (2/2)", true); return; }
 
         let photoUrl = null;
         if(photoFile) {
@@ -418,6 +459,8 @@ async function joinTeam() {
         room.players.push({ id: currentPlayerId, name: playerName, photo: photoUrl, score: 0, answers: [] });
         await roomRef.set(room);
 
+        currentTeamName = room.teamName;
+        isHost = false;
         toast(`✅ Rejoint "${room.teamName}" !`);
         enterRoom(code);
     } catch(e) {
@@ -427,45 +470,11 @@ async function joinTeam() {
 
 function enterRoom(code) {
     currentRoomCode = code;
-    document.getElementById('lobbyView').style.display = 'none';
-    document.getElementById('roomView').style.display = 'block';
+    document.getElementById('homeScreen').style.display = 'none';
+    document.getElementById('lobbyScreen').style.display = 'block';
+    document.getElementById('gameScreen').style.display = 'none';
     if(roomListener) roomListener();
     watchRoom(code);
-}
-
-function loadQuestions(part) {
-    let seed = gameSeed + (currentRoomCode ? parseInt(currentRoomCode) : 0);
-    if(part === 'partie1') {
-        currentQuestions = shuffleArray([...PART1_QUESTIONS], seed);
-    } else {
-        currentQuestions = shuffleArray([...PART2_QUESTIONS], seed + 999);
-    }
-    return currentQuestions;
-}
-
-function triggerConfetti() {
-    const colors = ['#ffcc00', '#ff3300', '#00ff00', '#0066cc', '#ff00ff', '#00ffff', '#ffffff'];
-    for(let i = 0; i < 80; i++) {
-        let confetti = document.createElement('div');
-        confetti.className = 'confetti';
-        confetti.style.left = Math.random() * 100 + '%';
-        confetti.style.top = '-10px';
-        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.width = (Math.random() * 8 + 4) + 'px';
-        confetti.style.height = (Math.random() * 8 + 4) + 'px';
-        confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-        confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
-        confetti.style.animationDelay = (Math.random() * 1.5) + 's';
-        document.body.appendChild(confetti);
-        setTimeout(() => confetti.remove(), 4000);
-    }
-}
-
-function showGameStartEffect() {
-    let container = document.getElementById('roomView');
-    container.classList.add('game-starting');
-    setTimeout(() => container.classList.remove('game-starting'), 3000);
-    triggerConfetti();
 }
 
 function watchRoom(code) {
@@ -476,23 +485,24 @@ function watchRoom(code) {
         let room = snap.val();
         if(!room) { 
             toast("Salon fermé", true);
-            leaveRoom(); 
+            leaveTeam(); 
             return; 
         }
 
-        let isHost = room.players[0]?.id === currentPlayerId;
         let playerCount = room.players.length;
+        let isHostPlayer = room.players[0]?.id === currentPlayerId;
+
+        document.getElementById('teamNameDisplay').textContent = `⚔️ ${escapeHtml(room.teamName)}`;
 
         if(room.status === 'waiting') {
             let html = `
                 <div style="text-align:center;">
-                    <h2>🎮 ${escapeHtml(room.teamName)}</h2>
                     <div class="code-box">🔑 ${code}</div>
                     <button class="btn" onclick="copyCode('${code}')">📋 COPIER LE CODE</button>
                     <div class="players-area">
             `;
 
-            for(let i = 0; i < 4; i++) {
+            for(let i = 0; i < 2; i++) {
                 let p = room.players[i];
                 html += `
                     <div class="player-card ${p ? 'filled' : ''}">
@@ -504,24 +514,28 @@ function watchRoom(code) {
 
             html += `</div>`;
 
-            if(isHost && playerCount >= 2) {
-                html += `<button class="btn btn-green" onclick="startGame('${code}')">🎮 COMMENCER (${playerCount}/4)</button>`;
-            } else if(isHost) {
-                html += `<p>⏳ En attente d'au moins 2 joueurs... (${playerCount}/4)</p>`;
+            if(isHostPlayer && playerCount === 2) {
+                html += `<button class="btn btn-green" onclick="startGame('${code}')">🎮 COMMENCER (${playerCount}/2)</button>`;
+            } else if(isHostPlayer) {
+                html += `<p>⏳ En attente d'un 2ème joueur... (${playerCount}/2)</p>`;
             } else {
-                html += `<p>⏳ En attente que l'hôte commence (${playerCount}/4)</p>`;
+                html += `<p>⏳ En attente que l'hôte commence (${playerCount}/2)</p>`;
             }
 
-            html += `<button class="btn" onclick="leaveRoom()">❌ QUITTER</button></div>`;
-            document.getElementById('roomView').innerHTML = html;
+            html += `</div>`;
+            document.getElementById('lobbyView').innerHTML = html;
+            document.getElementById('gameScreen').style.display = 'none';
         }
         else if(room.status === 'playing') {
+            document.getElementById('lobbyView').innerHTML = '';
+            document.getElementById('gameScreen').style.display = 'block';
             if(currentQuestions.length === 0) {
                 loadQuestions(room.currentPart || 'partie1');
             }
             await showQuiz(room, code);
         }
         else if(room.status === 'part2_unlocked') {
+            document.getElementById('gameScreen').style.display = 'block';
             let html2 = `
                 <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center; text-align:center;">
                     <div style="background: rgba(0,0,0,0.7); padding: 20px; border-radius: 15px;">
@@ -536,11 +550,11 @@ function watchRoom(code) {
             } else {
                 html2 += `
                     <p style="color:#ff6666;">❌ Score < 200. Partie terminée.</p>
-                    <button class="btn" onclick="leaveRoom()">🏠 QUITTER</button>
+                    <button class="btn" onclick="leaveTeam()">🏠 QUITTER</button>
                 `;
             }
             html2 += `</div></div>`;
-            document.getElementById('roomView').innerHTML = html2;
+            document.getElementById('gameScreen').innerHTML = html2;
         }
         else if(room.status === 'finished') {
             showFinalResults(room);
@@ -551,85 +565,6 @@ function watchRoom(code) {
 function copyCode(code) {
     navigator.clipboard.writeText(code);
     toast("✅ Code copié !");
-}
-
-async function startGame(code) {
-    let roomRef = db.ref(`rooms/${code}`);
-    let room = (await roomRef.once('value')).val();
-    
-    gameSeed = Date.now() + parseInt(code);
-    loadQuestions('partie1');
-    currentPart = 'partie1';
-    let qCount = currentQuestions.length;
-    
-    let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
-    
-    await roomRef.update({
-        status: 'playing',
-        currentQuestion: 0,
-        currentPart: 'partie1',
-        players: updatedPlayers
-    });
-    
-    showGameStartEffect();
-    toast("🎮 Partie 1 démarrée ! " + qCount + " questions");
-}
-
-async function startPart2(code) {
-    let roomRef = db.ref(`rooms/${code}`);
-    let room = (await roomRef.once('value')).val();
-    
-    gameSeed = Date.now() + parseInt(code) + 999;
-    loadQuestions('partie2');
-    currentPart = 'partie2';
-    let qCount = currentQuestions.length;
-    
-    let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
-    
-    await roomRef.update({
-        status: 'playing',
-        currentQuestion: 0,
-        currentPart: 'partie2',
-        players: updatedPlayers
-    });
-    
-    showGameStartEffect();
-    toast("🖼️ Partie 2 démarrée ! " + qCount + " questions");
-}
-
-async function loadNextQuestion(code, qIndex) {
-    let roomRef = db.ref(`rooms/${code}`);
-    let room = (await roomRef.once('value')).val();
-    
-    if(qIndex >= currentQuestions.length) {
-        if(room.currentPart === 'partie1') {
-            let total = room.players.reduce((s,p) => s + (p.score || 0), 0);
-            await roomRef.update({ status: 'part2_unlocked', scorePart1: total });
-            if(total >= 200) toast("✅ 200 points ! PARTIE 2 DÉBLOQUÉE !");
-            else toast(`❌ Score: ${total} points. Partie terminée.`);
-        } else {
-            let totalScore = room.players.reduce((s,p) => s + (p.score || 0), 0);
-            let sp1 = room.scorePart1 || 0;
-            await roomRef.update({ status: 'finished', scorePart2: totalScore });
-            let teamData = {
-                teamName: room.teamName,
-                players: room.players,
-                score: sp1 + totalScore,
-                scorePart1: sp1,
-                scorePart2: totalScore,
-                date: Date.now()
-            };
-            await db.ref(`teams/partie1/${code}`).set(teamData);
-            await db.ref(`teams/partie2/${code}`).set(teamData);
-            toast(`🏆 Partie terminée ! Score total: ${sp1 + totalScore} points !`);
-            loadRanking();
-        }
-        return;
-    }
-
-    await roomRef.update({ currentQuestion: qIndex });
-    let updatedRoom = (await roomRef.once('value')).val();
-    await showQuiz(updatedRoom, code);
 }
 
 function startTimer() {
@@ -655,7 +590,7 @@ function startTimer() {
                     b.classList.add('timeout');
                 }
             });
-            toast("⏰ Temps écoulé ! Les non-répondants sont exclus !", true);
+            toast("⏰ Temps écoulé !", true);
             autoSubmitAnswers();
         }
     }, 1000);
@@ -678,43 +613,104 @@ async function autoSubmitAnswers() {
     let updatedRoom = (await roomRef.once('value')).val();
     let activePlayers = updatedRoom.players.filter(p => p.lastAnswer !== -1);
     let wrongCount = activePlayers.filter(p => p.lastAnswer !== q.correct).length;
-    let totalActive = activePlayers.length;
     
-    if(totalActive === 0) {
-        toast("⏰ Personne n'a répondu ! 0 point pour tous.");
+    if(activePlayers.length === 0) {
+        toast("⏰ Personne n'a répondu ! 0 point.");
     } else if(wrongCount === 0) {
-        for(let i = 0; i < updatedRoom.players.length; i++) {
-            let p = updatedRoom.players[i];
-            if(p.lastAnswer === q.correct) {
-                let newScore = (p.score || 0) + 10;
-                await roomRef.child(`players/${i}/score`).set(newScore);
-            }
+        for(let p of activePlayers) {
+            p.score = (p.score || 0) + 10;
         }
-        toast("✅ TOUS LES RÉPONDANTS JUSTES ! +10 points !");
+        await roomRef.set(updatedRoom);
+        toast("✅ TOUS JUSTES ! +10 points !");
     } else if(wrongCount === 1) {
-        for(let i = 0; i < updatedRoom.players.length; i++) {
-            let p = updatedRoom.players[i];
-            if(p.lastAnswer === q.correct) {
-                let newScore = (p.score || 0) + 5;
-                await roomRef.child(`players/${i}/score`).set(newScore);
-            }
+        for(let p of activePlayers.filter(p => p.lastAnswer === q.correct)) {
+            p.score = (p.score || 0) + 5;
         }
-        toast("⚠️ 1 FAUX parmi les répondants ! Ceux qui ont juste gagnent 5 points.");
+        await roomRef.set(updatedRoom);
+        toast("⚠️ 1 FAUX ! Les justes gagnent 5 points.");
     } else {
-        toast("❌ " + wrongCount + " FAUX parmi les répondants ! 0 point pour tous.");
+        toast("❌ " + wrongCount + " FAUX ! 0 point.");
     }
-    
-    document.querySelectorAll('.answer').forEach((el, idx) => {
-        if(idx === q.correct) {
-            el.classList.add('correct-display');
-        } else if(room.players.some(p => p.lastAnswer === idx && p.lastAnswer !== q.correct)) {
-            el.classList.add('wrong-display');
-        }
-    });
     
     setTimeout(async () => {
         await loadNextQuestion(currentRoomCode, room.currentQuestion + 1);
     }, 2000);
+}
+
+async function startGame(code) {
+    let roomRef = db.ref(`rooms/${code}`);
+    let room = (await roomRef.once('value')).val();
+    
+    gameSeed = Date.now() + parseInt(code);
+    loadQuestions('partie1');
+    currentPart = 'partie1';
+    let qCount = currentQuestions.length;
+    
+    let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
+    
+    await roomRef.update({
+        status: 'playing',
+        currentQuestion: 0,
+        currentPart: 'partie1',
+        players: updatedPlayers
+    });
+    
+    toast("🎮 Partie 1 démarrée ! " + qCount + " questions");
+}
+
+async function startPart2(code) {
+    let roomRef = db.ref(`rooms/${code}`);
+    let room = (await roomRef.once('value')).val();
+    
+    gameSeed = Date.now() + parseInt(code) + 999;
+    loadQuestions('partie2');
+    currentPart = 'partie2';
+    let qCount = currentQuestions.length;
+    
+    let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
+    
+    await roomRef.update({
+        status: 'playing',
+        currentQuestion: 0,
+        currentPart: 'partie2',
+        players: updatedPlayers
+    });
+    
+    toast("🖼️ Partie 2 démarrée ! " + qCount + " questions");
+}
+
+async function loadNextQuestion(code, qIndex) {
+    let roomRef = db.ref(`rooms/${code}`);
+    let room = (await roomRef.once('value')).val();
+    
+    if(qIndex >= currentQuestions.length) {
+        if(room.currentPart === 'partie1') {
+            let total = room.players.reduce((s,p) => s + (p.score || 0), 0);
+            await roomRef.update({ status: 'part2_unlocked', scorePart1: total });
+            if(total >= 200) toast("✅ 200 points ! PARTIE 2 DÉBLOQUÉE !");
+            else toast(`❌ Score: ${total} points. Partie terminée.`);
+        } else {
+            let totalScore = room.players.reduce((s,p) => s + (p.score || 0), 0);
+            let sp1 = room.scorePart1 || 0;
+            await roomRef.update({ status: 'finished', scorePart2: totalScore });
+            let teamData = {
+                teamName: room.teamName,
+                players: room.players,
+                score: sp1 + totalScore,
+                scorePart1: sp1,
+                scorePart2: totalScore,
+                date: Date.now()
+            };
+            await db.ref(`teams/${code}`).set(teamData);
+            toast(`🏆 Partie terminée ! Score total: ${sp1 + totalScore} points !`);
+            loadRanking();
+        }
+        return;
+    }
+
+    await roomRef.update({ currentQuestion: qIndex });
+    let updatedRoom = (await roomRef.once('value')).val();
+    await showQuiz(updatedRoom, code);
 }
 
 async function showQuiz(room, code) {
@@ -761,7 +757,7 @@ async function showQuiz(room, code) {
     });
 
     html += `</div></div></div>`;
-    document.getElementById('roomView').innerHTML = html;
+    document.getElementById('gameScreen').innerHTML = html;
     
     startTimer();
 }
@@ -819,34 +815,25 @@ async function submitAnswer(code, qIndex, ansIdx) {
         });
         
         if(wrongCount === 0 && activePlayers.length > 0) {
-            for(let i = 0; i < updatedRoom.players.length; i++) {
-                let p = updatedRoom.players[i];
-                if(p.lastAnswer === q.correct) {
-                    let newScore = (p.score || 0) + 10;
-                    await roomRef.child(`players/${i}/score`).set(newScore);
-                }
+            for(let p of activePlayers) {
+                p.score = (p.score || 0) + 10;
             }
+            await roomRef.set(updatedRoom);
             toast("✅ TOUS JUSTES ! +10 points !");
         } else if(wrongCount === 1 && activePlayers.length > 1) {
-            for(let i = 0; i < updatedRoom.players.length; i++) {
-                let p = updatedRoom.players[i];
-                if(p.lastAnswer === q.correct) {
-                    let newScore = (p.score || 0) + 5;
-                    await roomRef.child(`players/${i}/score`).set(newScore);
-                }
+            for(let p of activePlayers.filter(p => p.lastAnswer === q.correct)) {
+                p.score = (p.score || 0) + 5;
             }
-            toast("⚠️ 1 FAUX ! Ceux qui ont juste gagnent 5 points.");
+            await roomRef.set(updatedRoom);
+            toast("⚠️ 1 FAUX ! Les justes gagnent 5 points.");
         } else if(activePlayers.length === 1 && wrongCount === 0) {
-            for(let i = 0; i < updatedRoom.players.length; i++) {
-                let p = updatedRoom.players[i];
-                if(p.lastAnswer === q.correct) {
-                    let newScore = (p.score || 0) + 10;
-                    await roomRef.child(`players/${i}/score`).set(newScore);
-                }
+            for(let p of activePlayers) {
+                p.score = (p.score || 0) + 10;
             }
+            await roomRef.set(updatedRoom);
             toast("✅ Le seul répondant a juste ! +10 points !");
         } else {
-            toast("❌ " + wrongCount + " FAUX ! 0 point pour tous.");
+            toast("❌ " + wrongCount + " FAUX ! 0 point.");
         }
         
         setTimeout(async () => {
@@ -866,8 +853,6 @@ function showFinalResults(room) {
     let total = players.reduce((s,p) => s + (p.score || 0), 0);
     let sp1 = room.scorePart1 || 0;
     let sp2 = room.scorePart2 || 0;
-    
-    let isVictory = total >= 200;
 
     let html = `
         <div class="quiz-area">
@@ -890,61 +875,41 @@ function showFinalResults(room) {
         `;
     });
 
-    if(isVictory) {
-        html += `
-            </div>
-            <div class="victory-card" style="margin:20px auto; padding:20px; border:2px solid #ffcc00; border-radius:15px; max-width:400px;">
-                <h2 style="color:#ffcc00;">🏆 VICTOIRE ! 🏆</h2>
-                <p style="color:#ffcc00;">Vous avez débloqué la Partie 2 !</p>
-            </div>
-            <button class="btn btn-green" onclick="startPart2('${currentRoomCode}')">🖼️ LANCER PARTIE 2</button>
-        `;
-        setTimeout(() => triggerConfetti(), 500);
-    } else {
-        html += `
-            </div>
-            <div class="defeat-card" style="margin:20px auto; padding:20px; border:2px solid #cc0000; border-radius:15px; max-width:400px;">
-                <h2 style="color:#ff6666;">💀 DÉFAITE 💀</h2>
-                <p style="color:#ff6666;">Score < 200 points. Partie terminée.</p>
-            </div>
-            <button class="btn" onclick="leaveRoom()">🏠 QUITTER</button>
-        `;
-    }
-
-    html += `
+    html += `</div>
+            <button class="btn" onclick="leaveTeam()">🏠 QUITTER</button>
             <button class="btn btn-blue" onclick="showPasswordPrompt()">🔐 RECONNEXION</button>
         </div></div>`;
-    document.getElementById('roomView').innerHTML = html;
+    document.getElementById('gameScreen').innerHTML = html;
 }
 
 function showPasswordPrompt() {
-    clearInterval(timerInterval);
     let html = `
-        <div class="password-box card">
-            <h2>🔐 RECONNEXION</h2>
-            <p>Entrez le mot de passe pour continuer</p>
+        <div class="auth-box">
+            <h3>🔐 RECONNEXION</h3>
+            <p style="color:#aaa; text-align:center;">Entrez le mot de passe de l'équipe</p>
             <input type="password" id="reconnectPassword" placeholder="Mot de passe">
             <button class="btn btn-green" onclick="reconnectWithPassword()">🔐 SE RECONNECTER</button>
-            <button class="btn" onclick="leaveRoom()">🏠 QUITTER</button>
+            <button class="btn" onclick="leaveTeam()" style="background:#555;">🏠 QUITTER</button>
         </div>
     `;
-    document.getElementById('roomView').innerHTML = html;
+    document.getElementById('gameScreen').innerHTML = html;
 }
 
-function reconnectWithPassword() {
+async function reconnectWithPassword() {
     let password = document.getElementById('reconnectPassword').value.trim();
-    if(password === "purge2025") {
+    if(!password) { toast("❌ Mot de passe requis", true); return; }
+    
+    let roomRef = db.ref(`rooms/${currentRoomCode}`);
+    let room = (await roomRef.once('value')).val();
+    if(room && room.password === password) {
         toast("✅ Reconnexion réussie !");
-        if(currentRoomCode) {
-            watchRoom(currentRoomCode);
-        }
+        watchRoom(currentRoomCode);
     } else {
         toast("❌ Mot de passe incorrect", true);
     }
 }
 
-async function leaveRoom() {
-    clearInterval(timerInterval);
+async function leaveTeam() {
     if(currentRoomCode) {
         let roomRef = db.ref(`rooms/${currentRoomCode}`);
         let room = (await roomRef.once('value')).val();
@@ -959,14 +924,17 @@ async function leaveRoom() {
     }
     if(roomListener) roomListener();
     currentRoomCode = null;
-    document.getElementById('lobbyView').style.display = 'block';
-    document.getElementById('roomView').style.display = 'none';
-    document.getElementById('playerPhoto').value = '';
+    currentTeamName = '';
+    isHost = false;
+    document.getElementById('homeScreen').style.display = 'block';
+    document.getElementById('lobbyScreen').style.display = 'none';
+    document.getElementById('gameScreen').style.display = 'none';
+    document.getElementById('joinCode').value = '';
+    document.getElementById('joinPlayerName').value = '';
     document.getElementById('joinPlayerPhoto').value = '';
-    document.getElementById('photoPreview1').innerHTML = '';
-    document.getElementById('photoPreview2').innerHTML = '';
+    document.getElementById('joinPhotoPreview').innerHTML = '';
     currentQuestions = [];
-    toast("Salon quitté");
+    toast("Équipe quittée");
 }
 
 initMusic();
