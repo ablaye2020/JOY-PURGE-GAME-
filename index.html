@@ -46,7 +46,15 @@
         .team-card { background: rgba(0,0,0,0.6); border-left: 4px solid #ffcc00; padding: 12px; margin: 8px 0; display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; }
         .quiz-area { background: rgba(0,0,0,0.95); border-radius: 20px; padding: 25px; }
         .question-text { font-size: 1.2em; text-align: center; margin: 20px 0; color: #ffcc00; }
-        .question-img { width: 100%; max-height: 280px; object-fit: cover; object-position: center top; border-radius: 15px; background: #0a0a0a; margin: 15px 0; }
+        .question-img {
+            width: 100%;
+            max-height: 320px;
+            object-fit: cover;
+            object-position: center 15%;
+            border-radius: 15px;
+            background: #0a0a0a;
+            margin: 15px 0;
+        }
         .answers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
         .answer { background: #333; border: 2px solid #ff6600; padding: 15px; border-radius: 15px; cursor: pointer; text-align: center; transition: 0.2s; }
         .answer:hover { background: #ff3300; transform: scale(1.02); }
@@ -67,9 +75,6 @@
         .photo-preview { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #ffcc00; margin-top: 8px; }
         .password-box { max-width: 400px; margin: 40px auto; text-align: center; }
         .password-box input { text-align: center; font-size: 1.5em; letter-spacing: 5px; }
-        .loading-screen { text-align: center; padding: 40px; color: #ffcc00; font-size: 1.2em; }
-        .loading-screen .spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid #ff6600; border-top: 4px solid #ffcc00; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeOut { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
         @media (max-width: 700px) { .answers { grid-template-columns: 1fr; } }
     </style>
@@ -135,7 +140,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <script>
-// ========== FIREBASE ==========
 const firebaseConfig = {
     apiKey: "AIzaSyAG30Darx6LTAc9XQVYOOEDC6L1AvKeFQA",
     authDomain: "joy-purge-game-v4.firebaseapp.com",
@@ -149,7 +153,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ========== PARTIE 1 - 20 QUESTIONS TEXTE ==========
+// ========== PARTIE 1 ==========
 const PART1_QUESTIONS = [
     { text: "Qui est le fondateur du clan GHOST ?", answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"], correct: 1 },
     { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "DIANNY", "NIGHT"], correct: 1 },
@@ -173,28 +177,28 @@ const PART1_QUESTIONS = [
     { text: "Qui était le chancelier de l'OMP ?", answers: ["ANGEL", "LORD IVAR", "SERAPHIN", "ANDRÉ"], correct: 1 }
 ];
 
-// ========== PARTIE 2 - 20 QUESTIONS IMAGES ==========
+// ========== PARTIE 2 ==========
 const PART2_QUESTIONS = [
-    { text: "Qui est ce purgeur ?", image: "IMG_0438.webp", answers: ["SIGHARAKI WORKER", "ARKHA CORVUS", "MONARQUE DES OMBRES", "NOLA D NAXE"], correct: 2 },
-    { text: "Qui est-ce ?", image: "IMG_0683.webp", answers: ["ELYNA ZETSU", "SHAÏNA", "FLEUR SAUVAGE", "PRINCESSE EMMA"], correct: 2 },
-    { text: "Qui est-ce ?", image: "IMG_0684.webp", answers: ["BLACK SAIYAN", "CHRISTIAN D ESCANOR", "JOY BOY", "SUPRÊME DESTRUCTOR"], correct: 1 },
-    { text: "Qui est-ce ?", image: "IMG_0685.webp", answers: ["FANTÔME GHOST", "PLUNDERER", "PERFECTION AKATSUKI", "MUZAN KILLER"], correct: 3 },
-    { text: "Qui est-ce ?", image: "IMG_0686.webp", answers: ["SHIRO KAGE", "WILLIAM MORYARTY", "Mr AURA", "CIEL STARHIVE"], correct: 1 },
-    { text: "Qui est-ce ?", image: "IMG_0687.webp", answers: ["LIVAÏ ACKERMAN", "JOY BOY", "JOYEUX", "INCONNU BOY"], correct: 1 },
-    { text: "Qui est-ce ?", image: "IMG_0688.webp", answers: ["MADARA UCHIWA", "BENJAMIN UCHIWA", "ZEAL BIG DEAL", "ARATA"], correct: 2 },
-    { text: "Qui est-ce ?", image: "IMG_0689.webp", answers: ["Mr LEY", "TOBI", "DEVI PRIME", "MUICHIRO"], correct: 2 },
-    { text: "Qui est-ce ?", image: "IMG_0690.webp", answers: ["Mr PERFECTION", "LIGHT EYES", "Mr NIGHT EYES", "JIN WORKER"], correct: 2 },
-    { text: "Qui est-ce ?", image: "IMG_0691.webp", answers: ["THANOS CDX", "ARKHA CORVUS", "L'OMBRE SK2", "MANDELA"], correct: 1 },
-    { text: "Qui est-ce ?", image: "IMG_0692.webp", answers: ["CIEL STARHIVE", "HOMME VOILÉ", "BENNY HADÉS", "SHIROKAGE"], correct: 2 },
-    { text: "Qui est-ce ?", image: "IMG_0696.webp", answers: ["JOKER PRIME", "THE BOSS SHELBY", "REDIX KARA", "KAKASHI KARA"], correct: 3 },
-    { text: "Qui est-ce ?", image: "IMG_0698.webp", answers: ["WILLIAM MORYARTY", "BLOOD ANGEL", "SERAPHIN", "DAISUKE KAMBE"], correct: 3 },
-    { text: "Qui est-ce ?", image: "IMG_0704.webp", answers: ["KLAUS MIKAELSON", "LUMY GRIMM", "ICHIGO KILLER", "TMP RIMKUS"], correct: 2 },
-    { text: "Qui est-ce ?", image: "IMG_0701.webp", answers: ["SHADOW", "GABIMARU", "ORACHIMARU", "KYOTAKA"], correct: 3 },
-    { text: "Qui est-ce ?", image: "IMG_0700.webp", answers: ["NABU ZETSU", "QUEEN KILLER", "MAÏNA SILVERS", "SUIJINA"], correct: 2 },
-    { text: "Qui est-ce ?", image: "IMG_0702.webp", answers: ["QUEEN Dija", "HINATA ZETSU", "ALEXA", "OLIVARES"], correct: 1 },
-    { text: "Qui est-ce ?", image: "IMG_0697.webp", answers: ["JOY BOY", "BLACK GOKU", "BLACK TOBI", "TOMMY GRIMM"], correct: 1 },
-    { text: "Qui est-ce ?", image: "IMG_0703.webp", answers: ["SAÏTAMA", "ARATA", "GOJO ASTRIOUS", "AKASHI"], correct: 2 },
-    { text: "Qui est-ce ?", image: "IMG_0705.webp", answers: ["POUTINE ZETSU", "BLACK TOBI ZETSU", "L'INCARNATION AKATSUKI", "Mr JOKER PRIME"], correct: 1 }
+    { text: "Qui est ce purgeur ?", image: "4492E8E3-4096-4810-8833-89039DB94EE0.png", answers: ["SIGHARAKI WORKER", "ARKHA CORVUS", "MONARQUE DES OMBRES", "NOLA D NAXE"], correct: 2 },
+    { text: "Qui est-ce ?", image: "8F915A3B-0BB7-4BD3-9F35-3D91AC3EBDEA.jpeg", answers: ["ELYNA ZETSU", "SHAÏNA", "FLEUR SAUVAGE", "PRINCESSE EMMA"], correct: 2 },
+    { text: "Qui est-ce ?", image: "00A56991-DC7C-4DB7-8079-272737DDE631.png", answers: ["BLACK SAIYAN", "CHRISTIAN D ESCANOR", "JOY BOY", "SUPRÊME DESTRUCTOR"], correct: 1 },
+    { text: "Qui est-ce ?", image: "D5F88138-BAD7-4F49-A552-FC432D673FBC.png", answers: ["FANTÔME GHOST", "PLUNDERER", "PERFECTION AKATSUKI", "MUZAN KILLER"], correct: 3 },
+    { text: "Qui est-ce ?", image: "D7C2168C-1037-481D-8AE3-EFE440E632E2.png", answers: ["SHIRO KAGE", "WILLIAM MORYARTY", "Mr AURA", "CIEL STARHIVE"], correct: 1 },
+    { text: "Qui est-ce ?", image: "A45BAFE2-BF9F-4DC0-9654-A35A3961E215.png", answers: ["LIVAÏ ACKERMAN", "JOY BOY", "JOYEUX", "INCONNU BOY"], correct: 1 },
+    { text: "Qui est-ce ?", image: "D528BF30-D580-4660-B303-92BBB696ACCB.png", answers: ["MADARA UCHIWA", "BENJAMIN UCHIWA", "ZEAL BIG DEAL", "ARATA"], correct: 2 },
+    { text: "Qui est-ce ?", image: "691FF3E1-1015-411E-8466-A96C2BD06A6B.png", answers: ["Mr LEY", "TOBI", "DEVI PRIME", "MUICHIRO"], correct: 2 },
+    { text: "Qui est-ce ?", image: "BB6418D4-FFBE-4144-A3D6-500B800F59A5.png", answers: ["Mr PERFECTION", "LIGHT EYES", "Mr NIGHT EYES", "JIN WORKER"], correct: 2 },
+    { text: "Qui est-ce ?", image: "DBD200E4-8485-4696-9F15-6E1FCDD12257.png", answers: ["THANOS CDX", "ARKHA CORVUS", "L'OMBRE SK2", "MANDELA"], correct: 1 },
+    { text: "Qui est-ce ?", image: "2990405B-66CA-4F98-B7DF-2D301E0E13F9.png", answers: ["CIEL STARHIVE", "HOMME VOILÉ", "BENNY HADÉS", "SHIROKAGE"], correct: 2 },
+    { text: "Qui est-ce ?", image: "E3AEFAE5-592C-4834-9963-39616F21CB09.png", answers: ["JOKER PRIME", "THE BOSS SHELBY", "REDIX KARA", "KAKASHI KARA"], correct: 3 },
+    { text: "Qui est-ce ?", image: "3F260E3A-4E3C-49EA-987A-327761E0BF33.png", answers: ["WILLIAM MORYARTY", "BLOOD ANGEL", "SERAPHIN", "DAISUKE KAMBE"], correct: 3 },
+    { text: "Qui est-ce ?", image: "AF82D6C7-5DEC-478A-AE13-962ABFAA016D.png", answers: ["KLAUS MIKAELSON", "LUMY GRIMM", "ICHIGO KILLER", "TMP RIMKUS"], correct: 2 },
+    { text: "Qui est-ce ?", image: "AAEF68DB-7E34-43E4-BC25-29EE51ACFA11.png", answers: ["SHADOW", "GABIMARU", "ORACHIMARU", "KYOTAKA"], correct: 3 },
+    { text: "Qui est-ce ?", image: "2E663876-3DAE-4E40-B3B2-92C008EE22D6.png", answers: ["NABU ZETSU", "QUEEN KILLER", "MAÏNA SILVERS", "SUIJINA"], correct: 2 },
+    { text: "Qui est-ce ?", image: "0FBC81ED-3931-4905-83A6-C8BC0120312B.png", answers: ["QUEEN Dija", "HINATA ZETSU", "ALEXA", "OLIVARES"], correct: 1 },
+    { text: "Qui est-ce ?", image: "A7AF9653-35C8-4BB4-8D24-3F356C8A84C1.png", answers: ["JOY BOY", "BLACK GOKU", "BLACK TOBI", "TOMMY GRIMM"], correct: 1 },
+    { text: "Qui est-ce ?", image: "4EC3B7AD-3150-4AE6-931D-99635AA9585F.png", answers: ["SAÏTAMA", "ARATA", "GOJO ASTRIOUS", "AKASHI"], correct: 2 },
+    { text: "Qui est-ce ?", image: "F80BFCD1-030B-470C-BB08-14CE31C96AC7.png", answers: ["POUTINE ZETSU", "BLACK TOBI ZETSU", "L'INCARNATION AKATSUKI", "Mr JOKER PRIME"], correct: 1 }
 ];
 
 // ========== VARIABLES ==========
@@ -423,7 +427,6 @@ function watchRoom(code) {
         let isHost = room.players[0]?.id === currentPlayerId;
         let playerCount = room.players.length;
 
-        // SALLE D'ATTENTE
         if(room.status === 'waiting') {
             let html = `
                 <div style="text-align:center;">
@@ -456,15 +459,12 @@ function watchRoom(code) {
             html += `<button class="btn" onclick="leaveRoom()">❌ QUITTER</button></div>`;
             document.getElementById('roomView').innerHTML = html;
         }
-        // QUIZ
         else if(room.status === 'playing') {
             if(currentQuestions.length === 0) {
                 loadQuestions(room.currentPart || 'partie1');
             }
-            // Forcer l'affichage du quiz pour tout le monde
             await showQuiz(room, code);
         }
-        // PARTIE 2 DÉBLOQUÉE
         else if(room.status === 'part2_unlocked') {
             let html2 = `
                 <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center; text-align:center;">
@@ -486,7 +486,6 @@ function watchRoom(code) {
             html2 += `</div></div>`;
             document.getElementById('roomView').innerHTML = html2;
         }
-        // RÉSULTATS FINAUX
         else if(room.status === 'finished') {
             showFinalResults(room);
         }
@@ -507,7 +506,6 @@ async function startGame(code) {
     currentPart = 'partie1';
     let qCount = currentQuestions.length;
     
-    // Réinitialiser les réponses des joueurs
     let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
     
     await roomRef.update({
@@ -612,10 +610,9 @@ async function autoSubmitAnswers() {
     
     let q = currentQuestions[room.currentQuestion];
     
-    // Marquer les joueurs qui n'ont pas répondu (lastAnswer = null)
     for(let p of room.players) {
         if(!p.answers || !p.answers.includes(room.currentQuestion)) {
-            p.lastAnswer = -1; // -1 = exclus
+            p.lastAnswer = -1;
         }
     }
     await roomRef.set(room);
@@ -628,7 +625,6 @@ async function autoSubmitAnswers() {
     if(totalActive === 0) {
         toast("⏰ Personne n'a répondu ! 0 point pour tous.");
     } else if(wrongCount === 0) {
-        // Tous ceux qui ont répondu ont juste
         for(let i = 0; i < updatedRoom.players.length; i++) {
             let p = updatedRoom.players[i];
             if(p.lastAnswer === q.correct) {
@@ -638,7 +634,6 @@ async function autoSubmitAnswers() {
         }
         toast("✅ TOUS LES RÉPONDANTS JUSTES ! +10 points !");
     } else if(wrongCount === 1) {
-        // Un seul faux parmi les répondants
         for(let i = 0; i < updatedRoom.players.length; i++) {
             let p = updatedRoom.players[i];
             if(p.lastAnswer === q.correct) {
@@ -651,7 +646,6 @@ async function autoSubmitAnswers() {
         toast("❌ " + wrongCount + " FAUX parmi les répondants ! 0 point pour tous.");
     }
     
-    // Afficher les bonnes réponses
     document.querySelectorAll('.answer').forEach((el, idx) => {
         if(idx === q.correct) {
             el.classList.add('correct-display');
@@ -756,7 +750,6 @@ async function submitAnswer(code, qIndex, ansIdx) {
         let q = currentQuestions[qIndex];
         let wrongCount = updatedRoom.players.filter(p => p.lastAnswer !== q.correct).length;
         
-        // Afficher les bonnes/mauvaises réponses
         let qCorrect = q.correct;
         document.querySelectorAll('.answer').forEach((el, idx) => {
             if(idx === qCorrect) {
@@ -889,4 +882,3 @@ loadForum();
 </script>
 </body>
 </html>
-J O Y ~ P U R G E ~ G A M E
