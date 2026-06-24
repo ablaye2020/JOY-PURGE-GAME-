@@ -31,6 +31,7 @@
         .btn { background: #ff3300; color: #ffcc00; border: none; padding: 12px 25px; border-radius: 30px; cursor: pointer; margin: 5px; font-weight: bold; font-size: 16px; }
         .btn-green { background: #008800; }
         .btn-blue { background: #0066cc; }
+        .btn-disabled { background: #555; cursor: not-allowed; opacity: 0.6; }
         input, textarea { width: 100%; padding: 12px; background: #1a1a1a; border: 2px solid #ff6600; border-radius: 10px; color: white; margin: 8px 0; font-size: 16px; }
         .nav { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
         .nav-btn { background: #222; border: 2px solid #ff6600; padding: 10px 20px; border-radius: 30px; color: #ffcc00; cursor: pointer; }
@@ -45,20 +46,26 @@
         .team-card { background: rgba(0,0,0,0.6); border-left: 4px solid #ffcc00; padding: 12px; margin: 8px 0; display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; }
         .quiz-area { background: rgba(0,0,0,0.95); border-radius: 20px; padding: 25px; }
         .question-text { font-size: 1.2em; text-align: center; margin: 20px 0; color: #ffcc00; }
+        .question-img { width: 100%; max-height: 280px; object-fit: cover; object-position: center top; border-radius: 15px; background: #0a0a0a; margin: 15px 0; }
         .answers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
         .answer { background: #333; border: 2px solid #ff6600; padding: 15px; border-radius: 15px; cursor: pointer; text-align: center; transition: 0.2s; }
         .answer:hover { background: #ff3300; transform: scale(1.02); }
+        .answer:disabled { background: #555; cursor: not-allowed; opacity: 0.5; }
+        .answer.selected { background: #008800; border-color: #00ff00; }
         .progress-bar { width: 100%; height: 12px; background: #333; border-radius: 10px; overflow: hidden; margin: 20px 0; }
         .progress-fill { height: 100%; background: linear-gradient(90deg, #ffcc00, #ff6600); width: 0%; transition: width 0.3s; }
+        .timer { font-size: 2em; text-align: center; color: #ffcc00; margin: 10px 0; }
+        .timer.warning { color: #ff3300; animation: blink 0.5s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         .forum-msg { background: rgba(0,0,0,0.5); border-left: 3px solid #ff6600; padding: 12px; margin: 8px 0; border-radius: 8px; }
         .admin-link { position: fixed; bottom: 20px; left: 20px; background: #ff3300; padding: 8px 18px; border-radius: 30px; color: white; text-decoration: none; z-index: 200; font-weight: bold; }
         .music-btn { position: fixed; bottom: 20px; right: 20px; background: #000; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #ff6600; z-index: 200; font-size: 22px; }
         .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #ffcc00; color: #000; padding: 10px 20px; border-radius: 30px; z-index: 1000; font-weight: bold; animation: fadeOut 2s; }
         .photo-preview { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #ffcc00; margin-top: 8px; }
-        .loading-screen { text-align: center; padding: 40px; color: #ffcc00; font-size: 1.2em; }
-        .loading-screen .spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid #ff6600; border-top: 4px solid #ffcc00; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         .password-box { max-width: 400px; margin: 40px auto; text-align: center; }
         .password-box input { text-align: center; font-size: 1.5em; letter-spacing: 5px; }
+        .loading-screen { text-align: center; padding: 40px; color: #ffcc00; font-size: 1.2em; }
+        .loading-screen .spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid #ff6600; border-top: 4px solid #ffcc00; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeOut { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
         @media (max-width: 700px) { .answers { grid-template-columns: 1fr; } }
@@ -125,6 +132,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <script>
+// ========== FIREBASE ==========
 const firebaseConfig = {
     apiKey: "AIzaSyAG30Darx6LTAc9XQVYOOEDC6L1AvKeFQA",
     authDomain: "joy-purge-game-v4.firebaseapp.com",
@@ -138,8 +146,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ========== 20 QUESTIONS OFFICIELLES ==========
-const ALL_QUESTIONS = [
+// ========== PARTIE 1 - 20 QUESTIONS TEXTE ==========
+const PART1_QUESTIONS = [
     { text: "Qui est le fondateur du clan GHOST ?", answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"], correct: 1 },
     { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "DIANNY", "NIGHT"], correct: 1 },
     { text: "Qui est le chef du clan KILLER ?", answers: ["UNIQUE KILLER", "MUZAN KILLER", "THOMAS SHELBY KILLER", "THE QUEEN KILLER"], correct: 1 },
@@ -162,6 +170,31 @@ const ALL_QUESTIONS = [
     { text: "Qui était le chancelier de l'OMP ?", answers: ["ANGEL", "LORD IVAR", "SERAPHIN", "ANDRÉ"], correct: 1 }
 ];
 
+// ========== PARTIE 2 - 20 QUESTIONS IMAGES ==========
+const PART2_QUESTIONS = [
+    { text: "Qui est ce purgeur ?", image: "IMG_0438.webp", answers: ["SIGHARAKI WORKER", "ARKHA CORVUS", "MONARQUE DES OMBRES", "NOLA D NAXE"], correct: 2 },
+    { text: "Qui est-ce ?", image: "IMG_0683.webp", answers: ["ELYNA ZETSU", "SHAÏNA", "FLEUR SAUVAGE", "PRINCESSE EMMA"], correct: 2 },
+    { text: "Qui est-ce ?", image: "IMG_0684.webp", answers: ["BLACK SAIYAN", "CHRISTIAN D ESCANOR", "JOY BOY", "SUPRÊME DESTRUCTOR"], correct: 1 },
+    { text: "Qui est-ce ?", image: "IMG_0685.webp", answers: ["FANTÔME GHOST", "PLUNDERER", "PERFECTION AKATSUKI", "MUZAN KILLER"], correct: 3 },
+    { text: "Qui est-ce ?", image: "IMG_0686.webp", answers: ["SHIRO KAGE", "WILLIAM MORYARTY", "Mr AURA", "CIEL STARHIVE"], correct: 1 },
+    { text: "Qui est-ce ?", image: "IMG_0687.webp", answers: ["LIVAÏ ACKERMAN", "JOY BOY", "JOYEUX", "INCONNU BOY"], correct: 1 },
+    { text: "Qui est-ce ?", image: "IMG_0688.webp", answers: ["MADARA UCHIWA", "BENJAMIN UCHIWA", "ZEAL BIG DEAL", "ARATA"], correct: 2 },
+    { text: "Qui est-ce ?", image: "IMG_0689.webp", answers: ["Mr LEY", "TOBI", "DEVI PRIME", "MUICHIRO"], correct: 2 },
+    { text: "Qui est-ce ?", image: "IMG_0690.webp", answers: ["Mr PERFECTION", "LIGHT EYES", "Mr NIGHT EYES", "JIN WORKER"], correct: 2 },
+    { text: "Qui est-ce ?", image: "IMG_0691.webp", answers: ["THANOS CDX", "ARKHA CORVUS", "L'OMBRE SK2", "MANDELA"], correct: 1 },
+    { text: "Qui est-ce ?", image: "IMG_0692.webp", answers: ["CIEL STARHIVE", "HOMME VOILÉ", "BENNY HADÉS", "SHIROKAGE"], correct: 2 },
+    { text: "Qui est-ce ?", image: "IMG_0696.webp", answers: ["JOKER PRIME", "THE BOSS SHELBY", "REDIX KARA", "KAKASHI KARA"], correct: 3 },
+    { text: "Qui est-ce ?", image: "IMG_0698.webp", answers: ["WILLIAM MORYARTY", "BLOOD ANGEL", "SERAPHIN", "DAISUKE KAMBE"], correct: 3 },
+    { text: "Qui est-ce ?", image: "IMG_0704.webp", answers: ["KLAUS MIKAELSON", "LUMY GRIMM", "ICHIGO KILLER", "TMP RIMKUS"], correct: 2 },
+    { text: "Qui est-ce ?", image: "IMG_0701.webp", answers: ["SHADOW", "GABIMARU", "ORACHIMARU", "KYOTAKA"], correct: 3 },
+    { text: "Qui est-ce ?", image: "IMG_0700.webp", answers: ["NABU ZETSU", "QUEEN KILLER", "MAÏNA SILVERS", "SUIJINA"], correct: 2 },
+    { text: "Qui est-ce ?", image: "IMG_0702.webp", answers: ["QUEEN Dija", "HINATA ZETSU", "ALEXA", "OLIVARES"], correct: 1 },
+    { text: "Qui est-ce ?", image: "IMG_0697.webp", answers: ["JOY BOY", "BLACK GOKU", "BLACK TOBI", "TOMMY GRIMM"], correct: 1 },
+    { text: "Qui est-ce ?", image: "IMG_0703.webp", answers: ["SAÏTAMA", "ARATA", "GOJO ASTRIOUS", "AKASHI"], correct: 2 },
+    { text: "Qui est-ce ?", image: "IMG_0705.webp", answers: ["POUTINE ZETSU", "BLACK TOBI ZETSU", "L'INCARNATION AKATSUKI", "Mr JOKER PRIME"], correct: 1 }
+];
+
+// ========== VARIABLES ==========
 let currentRoomCode = null;
 let currentPlayerId = localStorage.getItem('playerId');
 if(!currentPlayerId) {
@@ -172,7 +205,10 @@ let musicPlaying = false;
 let bgMusic = null;
 let roomListener = null;
 let currentQuestions = [];
-let part1Completed = false;
+let currentPart = 'partie1';
+let timerInterval = null;
+let timeLeft = 30;
+let isAnswered = false;
 
 function initMusic() { bgMusic = document.getElementById('bgMusic'); if(bgMusic) bgMusic.volume = 0.2; }
 function toggleMusic() { if(!bgMusic) initMusic(); if(musicPlaying) { bgMusic.pause(); musicPlaying=false; document.getElementById('musicBtn').innerHTML='🎵'; } else { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }
@@ -207,6 +243,14 @@ function toast(msg, err) {
 }
 
 function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+
+function shuffleArray(arr) {
+    for(let i = arr.length - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
 
 function showSection(section) {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -347,9 +391,12 @@ function enterRoom(code) {
     watchRoom(code);
 }
 
-function loadQuestions() {
-    currentQuestions = ALL_QUESTIONS;
-    console.log("📚 Questions chargées:", currentQuestions.length);
+function loadQuestions(part) {
+    if(part === 'partie1') {
+        currentQuestions = shuffleArray([...PART1_QUESTIONS]);
+    } else {
+        currentQuestions = shuffleArray([...PART2_QUESTIONS]);
+    }
     return currentQuestions;
 }
 
@@ -399,8 +446,29 @@ function watchRoom(code) {
             document.getElementById('roomView').innerHTML = html;
         }
         else if(room.status === 'playing') {
-            if(currentQuestions.length === 0) loadQuestions();
+            if(currentQuestions.length === 0) loadQuestions(room.currentPart || 'partie1');
             await showQuiz(room, code);
+        }
+        else if(room.status === 'part2_unlocked') {
+            let html2 = `
+                <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center; text-align:center;">
+                    <div style="background: rgba(0,0,0,0.7); padding: 20px; border-radius: 15px;">
+                        <h2 style="color:#ffcc00;">🏆 PARTIE 1 TERMINÉE !</h2>
+                        <div style="font-size:1.5em; margin:20px; color:#ffcc00;">Score: ${room.scorePart1} points</div>
+            `;
+            if(room.scorePart1 >= 300) {
+                html2 += `
+                    <p style="color:#00ff00;">✅ Score ≥ 300 ! PARTIE 2 DÉBLOQUÉE !</p>
+                    <button class="btn btn-green" onclick="startPart2('${code}')">🖼️ LANCER PARTIE 2</button>
+                `;
+            } else {
+                html2 += `
+                    <p style="color:#ff6666;">❌ Score < 300. Partie terminée.</p>
+                    <button class="btn" onclick="leaveRoom()">🏠 QUITTER</button>
+                `;
+            }
+            html2 += `</div></div>`;
+            document.getElementById('roomView').innerHTML = html2;
         }
         else if(room.status === 'finished') {
             showFinalResults(room);
@@ -417,7 +485,8 @@ async function startGame(code) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     
-    loadQuestions();
+    loadQuestions('partie1');
+    currentPart = 'partie1';
     let qCount = currentQuestions.length;
     
     let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
@@ -429,7 +498,27 @@ async function startGame(code) {
         players: updatedPlayers
     });
     
-    toast("🎮 Partie démarrée ! " + qCount + " questions");
+    toast("🎮 Partie 1 démarrée ! " + qCount + " questions");
+}
+
+async function startPart2(code) {
+    let roomRef = db.ref(`rooms/${code}`);
+    let room = (await roomRef.once('value')).val();
+    
+    loadQuestions('partie2');
+    currentPart = 'partie2';
+    let qCount = currentQuestions.length;
+    
+    let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
+    
+    await roomRef.update({
+        status: 'playing',
+        currentQuestion: 0,
+        currentPart: 'partie2',
+        players: updatedPlayers
+    });
+    
+    toast("🖼️ Partie 2 démarrée ! " + qCount + " questions");
 }
 
 async function loadNextQuestion(code, qIndex) {
@@ -437,27 +526,104 @@ async function loadNextQuestion(code, qIndex) {
     let room = (await roomRef.once('value')).val();
     
     if(qIndex >= currentQuestions.length) {
-        // Fin de la partie 1
-        let total = room.players.reduce((s,p) => s + (p.score || 0), 0);
-        await roomRef.update({ status: 'finished', scorePart1: total });
-        
-        // Sauvegarder le classement
-        let teamData = {
-            teamName: room.teamName,
-            players: room.players,
-            score: total,
-            date: Date.now()
-        };
-        await db.ref(`teams/partie1/${code}`).set(teamData);
-        
-        toast(`🏆 Partie terminée ! Score: ${total} points !`);
-        loadRanking();
+        if(room.currentPart === 'partie1') {
+            let total = room.players.reduce((s,p) => s + (p.score || 0), 0);
+            await roomRef.update({ status: 'part2_unlocked', scorePart1: total });
+            if(total >= 300) toast("✅ 300 points ! PARTIE 2 DÉBLOQUÉE !");
+            else toast(`❌ Score: ${total} points. Partie terminée.`);
+        } else {
+            let totalScore = room.players.reduce((s,p) => s + (p.score || 0), 0);
+            let sp1 = room.scorePart1 || 0;
+            await roomRef.update({ status: 'finished', scorePart2: totalScore });
+            let teamData = {
+                teamName: room.teamName,
+                players: room.players,
+                score: sp1 + totalScore,
+                scorePart1: sp1,
+                scorePart2: totalScore,
+                date: Date.now()
+            };
+            await db.ref(`teams/partie1/${code}`).set(teamData);
+            await db.ref(`teams/partie2/${code}`).set(teamData);
+            toast(`🏆 Partie terminée ! Score total: ${sp1 + totalScore} points !`);
+            loadRanking();
+        }
         return;
     }
 
     await roomRef.update({ currentQuestion: qIndex });
     let updatedRoom = (await roomRef.once('value')).val();
     await showQuiz(updatedRoom, code);
+}
+
+function startTimer() {
+    timeLeft = 30;
+    isAnswered = false;
+    let timerEl = document.getElementById('timerDisplay');
+    if(!timerEl) return;
+    
+    clearInterval(timerInterval);
+    timerEl.textContent = "⏱️ 30s";
+    timerEl.className = 'timer';
+    
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = "⏱️ " + timeLeft + "s";
+        if(timeLeft <= 5) timerEl.className = 'timer warning';
+        if(timeLeft <= 0) {
+            clearInterval(timerInterval);
+            timerEl.textContent = "⏱️ 0s";
+            // Forcer la soumission des réponses
+            document.querySelectorAll('.answer').forEach(b => b.disabled = true);
+            toast("⏰ Temps écoulé !", true);
+            // Simuler une soumission automatique
+            autoSubmitAnswers();
+        }
+    }, 1000);
+}
+
+async function autoSubmitAnswers() {
+    let roomRef = db.ref(`rooms/${currentRoomCode}`);
+    let room = (await roomRef.once('value')).val();
+    if(!room) return;
+    
+    // Vérifier si tous ont répondu, sinon les marquer comme non répondues
+    let allAnswered = room.players.every(p => p.answers && p.answers.includes(room.currentQuestion));
+    if(!allAnswered) {
+        // Les joueurs qui n'ont pas répondu sont considérés comme ayant faux
+        for(let p of room.players) {
+            if(!p.answers || !p.answers.includes(room.currentQuestion)) {
+                p.lastAnswer = -1; // -1 = pas de réponse
+            }
+        }
+        await roomRef.set(room);
+        
+        // Calculer les points
+        let q = currentQuestions[room.currentQuestion];
+        let wrongCount = room.players.filter(p => p.lastAnswer !== q.correct).length;
+        
+        if(wrongCount === 0) {
+            for(let i = 0; i < room.players.length; i++) {
+                let newScore = (room.players[i].score || 0) + 10;
+                await roomRef.child(`players/${i}/score`).set(newScore);
+            }
+            toast("✅ TOUS JUSTES ! +10 points !");
+        } else if(wrongCount === 1) {
+            for(let i = 0; i < room.players.length; i++) {
+                let p = room.players[i];
+                if(p.lastAnswer === q.correct) {
+                    let newScore = (p.score || 0) + 5;
+                    await roomRef.child(`players/${i}/score`).set(newScore);
+                }
+            }
+            toast("⚠️ 1 FAUX ! Ceux qui ont juste gagnent 5 points.");
+        } else {
+            toast("❌ " + wrongCount + " FAUX ! 0 point pour tous.");
+        }
+        
+        clearInterval(timerInterval);
+        await loadNextQuestion(currentRoomCode, room.currentQuestion + 1);
+    }
 }
 
 async function showQuiz(room, code) {
@@ -483,7 +649,7 @@ async function showQuiz(room, code) {
     statusHtml += `</div>`;
 
     let html = `
-        <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center;">
+        <div class="quiz-area">
             <div style="background: rgba(0,0,0,0.85); padding: 20px; border-radius: 15px;">
                 ${statusHtml}
                 <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
@@ -491,22 +657,33 @@ async function showQuiz(room, code) {
                     <div>📋 Question ${room.currentQuestion+1}/${currentQuestions.length}</div>
                 </div>
                 <div class="progress-bar"><div class="progress-fill" style="width:${progress}%;"></div></div>
-                <div class="question-text">${escapeHtml(q.text)}</div>
-                <div class="answers">
+                <div id="timerDisplay" class="timer">⏱️ 30s</div>
     `;
 
+    if(q.image) html += `<img src="${q.image}" class="question-img" onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/ff6600?text=Image+non+trouvée'">`;
+
+    html += `<div class="question-text">${escapeHtml(q.text)}</div>
+        <div class="answers" id="answersContainer">`;
+
     q.answers.forEach((ans, i) => {
-        html += `<div class="answer" onclick="submitAnswer('${code}', ${room.currentQuestion}, ${i})">${String.fromCharCode(65+i)}. ${escapeHtml(ans)}</div>`;
+        html += `<div class="answer" id="answer_${i}" onclick="submitAnswer('${code}', ${room.currentQuestion}, ${i})">${String.fromCharCode(65+i)}. ${escapeHtml(ans)}</div>`;
     });
 
     html += `</div></div></div>`;
     document.getElementById('roomView').innerHTML = html;
+    
+    // Démarrer le timer
+    startTimer();
 }
 
 async function submitAnswer(code, qIndex, ansIdx) {
+    if(isAnswered) {
+        toast("Vous avez déjà répondu !", true);
+        return;
+    }
+    
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
-    let q = currentQuestions[qIndex];
     let playerIndex = room.players.findIndex(p => p.id === currentPlayerId);
 
     if(playerIndex === -1) {
@@ -519,6 +696,15 @@ async function submitAnswer(code, qIndex, ansIdx) {
         return;
     }
 
+    isAnswered = true;
+    
+    // Désactiver tous les boutons
+    document.querySelectorAll('.answer').forEach(b => b.disabled = true);
+    
+    // Mettre en surbrillance la réponse choisie
+    let selectedBtn = document.getElementById('answer_' + ansIdx);
+    if(selectedBtn) selectedBtn.classList.add('selected');
+
     let updatedAnswers = [...(room.players[playerIndex].answers || []), qIndex];
     await roomRef.child(`players/${playerIndex}/answers`).set(updatedAnswers);
     await roomRef.child(`players/${playerIndex}/lastAnswer`).set(ansIdx);
@@ -527,18 +713,18 @@ async function submitAnswer(code, qIndex, ansIdx) {
     let allAnswered = updatedRoom.players.every(p => p.answers && p.answers.includes(qIndex));
 
     if(allAnswered) {
-        // Calculer les points selon la règle : 1 faux = 5 pts, 2+ faux = 0 pts
+        clearInterval(timerInterval);
+        
+        let q = currentQuestions[qIndex];
         let wrongCount = updatedRoom.players.filter(p => p.lastAnswer !== q.correct).length;
         
         if(wrongCount === 0) {
-            // Tous justes : +10 points
             for(let i = 0; i < updatedRoom.players.length; i++) {
                 let newScore = (updatedRoom.players[i].score || 0) + 10;
                 await roomRef.child(`players/${i}/score`).set(newScore);
             }
             toast("✅ TOUS JUSTES ! +10 points !");
         } else if(wrongCount === 1) {
-            // Un seul faux : +5 points pour ceux qui ont juste
             for(let i = 0; i < updatedRoom.players.length; i++) {
                 let p = updatedRoom.players[i];
                 if(p.lastAnswer === q.correct) {
@@ -548,7 +734,6 @@ async function submitAnswer(code, qIndex, ansIdx) {
             }
             toast("⚠️ 1 FAUX ! Ceux qui ont juste gagnent 5 points.");
         } else {
-            // 2 ou plus faux : 0 point pour tous
             toast("❌ " + wrongCount + " FAUX ! 0 point pour tous.");
         }
         
@@ -561,15 +746,22 @@ async function submitAnswer(code, qIndex, ansIdx) {
 }
 
 function showFinalResults(room) {
+    clearInterval(timerInterval);
     let players = [...room.players];
     players.sort((a,b) => (b.score || 0) - (a.score || 0));
     let total = players.reduce((s,p) => s + (p.score || 0), 0);
+    let sp1 = room.scorePart1 || 0;
+    let sp2 = room.scorePart2 || 0;
 
     let html = `
-        <div class="quiz-area" style="background-image: url('A24E9D6C-F745-4D39-9AEB-D8120CB16DB8.jpeg'); background-size: cover; background-position: center;">
+        <div class="quiz-area">
             <div style="background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; text-align:center;">
                 <h2 style="color:#ffcc00;">🏆 RÉSULTATS FINAUX 🏆</h2>
                 <div style="font-size:1.5em; margin:15px; color:#ffcc00;">${escapeHtml(room.teamName)} : ${total} pts</div>
+                <div style="display:flex; justify-content:center; gap:30px; flex-wrap:wrap; margin:10px 0;">
+                    <span>📝 Partie 1: ${sp1} pts</span>
+                    <span>🖼️ Partie 2: ${sp2} pts</span>
+                </div>
                 <div class="players-area">
     `;
 
@@ -590,6 +782,7 @@ function showFinalResults(room) {
 }
 
 function showPasswordPrompt() {
+    clearInterval(timerInterval);
     let html = `
         <div class="password-box card">
             <h2>🔐 RECONNEXION</h2>
@@ -606,7 +799,6 @@ function reconnectWithPassword() {
     let password = document.getElementById('reconnectPassword').value.trim();
     if(password === "purge2025") {
         toast("✅ Reconnexion réussie !");
-        // Recharger la room
         if(currentRoomCode) {
             watchRoom(currentRoomCode);
         }
@@ -616,6 +808,7 @@ function reconnectWithPassword() {
 }
 
 async function leaveRoom() {
+    clearInterval(timerInterval);
     if(currentRoomCode) {
         let roomRef = db.ref(`rooms/${currentRoomCode}`);
         let room = (await roomRef.once('value')).val();
