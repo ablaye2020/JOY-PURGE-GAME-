@@ -31,7 +31,6 @@
         .btn { background: #ff3300; color: #ffcc00; border: none; padding: 12px 25px; border-radius: 30px; cursor: pointer; margin: 5px; font-weight: bold; font-size: 16px; }
         .btn-green { background: #008800; }
         .btn-blue { background: #0066cc; }
-        .btn-disabled { background: #555; cursor: not-allowed; opacity: 0.6; }
         input, textarea { width: 100%; padding: 12px; background: #1a1a1a; border: 2px solid #ff6600; border-radius: 10px; color: white; margin: 8px 0; font-size: 16px; }
         .nav { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
         .nav-btn { background: #222; border: 2px solid #ff6600; padding: 10px 20px; border-radius: 30px; color: #ffcc00; cursor: pointer; }
@@ -48,12 +47,13 @@
         .question-text { font-size: 1.2em; text-align: center; margin: 20px 0; color: #ffcc00; }
         .question-img {
             width: 100%;
-            max-height: 320px;
+            height: 280px;
             object-fit: cover;
-            object-position: center 15%;
+            object-position: center 20%;
             border-radius: 15px;
             background: #0a0a0a;
             margin: 15px 0;
+            border: 2px solid #ff6600;
         }
         .answers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
         .answer { background: #333; border: 2px solid #ff6600; padding: 15px; border-radius: 15px; cursor: pointer; text-align: center; transition: 0.2s; }
@@ -217,6 +217,7 @@ let timerInterval = null;
 let timeLeft = 30;
 let isAnswered = false;
 let gameSeed = Date.now();
+let questionLocked = false;
 
 function initMusic() { bgMusic = document.getElementById('bgMusic'); if(bgMusic) bgMusic.volume = 0.2; }
 function toggleMusic() { if(!bgMusic) initMusic(); if(musicPlaying) { bgMusic.pause(); musicPlaying=false; document.getElementById('musicBtn').innerHTML='🎵'; } else { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }
@@ -748,7 +749,9 @@ async function submitAnswer(code, qIndex, ansIdx) {
         clearInterval(timerInterval);
         
         let q = currentQuestions[qIndex];
-        let wrongCount = updatedRoom.players.filter(p => p.lastAnswer !== q.correct).length;
+        // 🔥 CORRECTION : Ne compter que les joueurs qui ont répondu
+        let activePlayers = updatedRoom.players.filter(p => p.lastAnswer !== -1);
+        let wrongCount = activePlayers.filter(p => p.lastAnswer !== q.correct).length;
         
         let qCorrect = q.correct;
         document.querySelectorAll('.answer').forEach((el, idx) => {
@@ -759,13 +762,16 @@ async function submitAnswer(code, qIndex, ansIdx) {
             }
         });
         
-        if(wrongCount === 0) {
+        if(wrongCount === 0 && activePlayers.length > 0) {
             for(let i = 0; i < updatedRoom.players.length; i++) {
-                let newScore = (updatedRoom.players[i].score || 0) + 10;
-                await roomRef.child(`players/${i}/score`).set(newScore);
+                let p = updatedRoom.players[i];
+                if(p.lastAnswer === q.correct) {
+                    let newScore = (p.score || 0) + 10;
+                    await roomRef.child(`players/${i}/score`).set(newScore);
+                }
             }
             toast("✅ TOUS JUSTES ! +10 points !");
-        } else if(wrongCount === 1) {
+        } else if(wrongCount === 1 && activePlayers.length > 1) {
             for(let i = 0; i < updatedRoom.players.length; i++) {
                 let p = updatedRoom.players[i];
                 if(p.lastAnswer === q.correct) {
@@ -774,6 +780,16 @@ async function submitAnswer(code, qIndex, ansIdx) {
                 }
             }
             toast("⚠️ 1 FAUX ! Ceux qui ont juste gagnent 5 points.");
+        } else if(activePlayers.length === 1 && wrongCount === 0) {
+            // Un seul joueur a répondu et il a juste
+            for(let i = 0; i < updatedRoom.players.length; i++) {
+                let p = updatedRoom.players[i];
+                if(p.lastAnswer === q.correct) {
+                    let newScore = (p.score || 0) + 10;
+                    await roomRef.child(`players/${i}/score`).set(newScore);
+                }
+            }
+            toast("✅ Le seul répondant a juste ! +10 points !");
         } else {
             toast("❌ " + wrongCount + " FAUX ! 0 point pour tous.");
         }
