@@ -57,7 +57,6 @@
         .answer.selected-wrong { background: #cc0000; border-color: #ff0000; animation: wrongShake 0.8s ease; }
         .answer.timeout { background: #555; border-color: #888; opacity: 0.5; text-decoration: line-through; }
         
-        /* ========== EFFETS ÉPIQUES ========== */
         @keyframes correctPulse {
             0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0,255,0,0); }
             30% { transform: scale(1.15); box-shadow: 0 0 60px 20px rgba(0,255,0,0.6); }
@@ -291,11 +290,9 @@ let currentQuestions = [];
 let currentPart = 'partie1';
 let timerInterval = null;
 let timeLeft = 30;
-let isAnswered = false;
 let gameSeed = Date.now();
 let currentTeamName = '';
 let isHost = false;
-let answeringLocked = false;
 
 function initMusic() { bgMusic = document.getElementById('bgMusic'); if(bgMusic) bgMusic.volume = 0.2; }
 function toggleMusic() { if(!bgMusic) initMusic(); if(musicPlaying) { bgMusic.pause(); musicPlaying=false; document.getElementById('musicBtn').innerHTML='🎵'; } else { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }
@@ -410,13 +407,11 @@ function loadQuestions(part) {
 
 // ========== EFFETS ÉPIQUES ==========
 function triggerEpicEffect(isCorrect) {
-    // Flash d'écran
     let flash = document.createElement('div');
     flash.className = 'flash-overlay ' + (isCorrect ? 'green' : 'red');
     document.body.appendChild(flash);
     setTimeout(() => flash.remove(), 600);
     
-    // Particules
     const colors = isCorrect ? ['#FFD700', '#00ff00', '#FFA500', '#ffffff'] : ['#ff0000', '#8B0000', '#ff4444', '#ff6666'];
     for(let i = 0; i < 50; i++) {
         let particle = document.createElement('div');
@@ -452,7 +447,7 @@ function triggerConfetti() {
     }
 }
 
-// ========== CRÉER UNE ÉQUIPE (HÔTE) ==========
+// ========== CRÉER UNE ÉQUIPE ==========
 async function createTeam() {
     let teamName = document.getElementById('teamNameCreate').value.trim();
     let password = document.getElementById('teamPasswordCreate').value.trim();
@@ -499,7 +494,7 @@ async function createTeam() {
     }
 }
 
-// ========== RECONNEXION (HÔTE) ==========
+// ========== RECONNEXION ==========
 async function reconnectTeam() {
     let teamName = document.getElementById('teamNameReconnect').value.trim();
     let password = document.getElementById('teamPasswordReconnect').value.trim();
@@ -527,7 +522,7 @@ async function reconnectTeam() {
     }
 }
 
-// ========== REJOINDRE UNE ÉQUIPE (JOUEUR) ==========
+// ========== REJOINDRE ==========
 async function joinTeam() {
     let code = document.getElementById('joinCode').value.trim();
     let playerName = document.getElementById('joinPlayerName').value.trim();
@@ -666,7 +661,6 @@ function copyCode(code) {
 // ========== TIMER ==========
 function startTimer() {
     timeLeft = 30;
-    isAnswered = false;
     let timerEl = document.getElementById('timerDisplay');
     if(!timerEl) return;
     
@@ -700,13 +694,16 @@ async function autoSubmitAnswers() {
     if(!room) return;
     
     let q = currentQuestions[room.currentQuestion];
+    let allAnswered = room.players.every(p => p.answers && p.answers.includes(room.currentQuestion));
     
-    for(let p of room.players) {
-        if(!p.answers || !p.answers.includes(room.currentQuestion)) {
-            p.lastAnswer = -1;
+    if(!allAnswered) {
+        for(let p of room.players) {
+            if(!p.answers || !p.answers.includes(room.currentQuestion)) {
+                p.lastAnswer = -1;
+            }
         }
+        await roomRef.set(room);
     }
-    await roomRef.set(room);
     
     let updatedRoom = (await roomRef.once('value')).val();
     let activePlayers = updatedRoom.players.filter(p => p.lastAnswer !== -1);
@@ -733,7 +730,7 @@ async function autoSubmitAnswers() {
     
     setTimeout(async () => {
         await loadNextQuestion(currentRoomCode, room.currentQuestion + 1);
-    }, 500);
+    }, 400);
 }
 
 // ========== DÉMARRER LA PARTIE ==========
@@ -816,12 +813,10 @@ async function loadNextQuestion(code, qIndex) {
     }
 
     await roomRef.update({ currentQuestion: qIndex });
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 200));
     let updatedRoom = (await roomRef.once('value')).val();
     if(!updatedRoom) return;
     
-    // Réinitialiser le verrou de réponse
-    answeringLocked = false;
     await showQuiz(updatedRoom, code);
 }
 
@@ -877,39 +872,28 @@ async function showQuiz(room, code) {
         let isWrong = hasAnswered && player.lastAnswer === i && i !== q.correct;
         
         let classes = 'answer';
+        let style = '';
         if(hasAnswered) {
-            if(isSelected && isCorrect) classes += ' selected-correct';
-            else if(isSelected && isWrong) classes += ' selected-wrong';
-            else if(i === q.correct && player.lastAnswer !== i) classes += ' correct-display';
+            if(isSelected && isCorrect) { classes += ' selected-correct'; }
+            else if(isSelected && isWrong) { classes += ' selected-wrong'; }
+            else if(i === q.correct && player.lastAnswer !== i) { classes += ' correct-display'; }
+            style = 'cursor:default;';
         }
         
-        let disabled = hasAnswered;
-        let onclick = disabled ? '' : `submitAnswer('${code}', ${room.currentQuestion}, ${i})`;
+        let onclick = hasAnswered ? '' : `submitAnswer('${code}', ${room.currentQuestion}, ${i})`;
         
-        html += `<div class="${classes}" id="answer_${i}" onclick="${onclick}" style="${disabled ? (isSelected ? '' : 'cursor:default;') : ''}">${String.fromCharCode(65+i)}. ${escapeHtml(ans)}</div>`;
+        html += `<div class="${classes}" id="answer_${i}" onclick="${onclick}" style="${style}">${String.fromCharCode(65+i)}. ${escapeHtml(ans)}</div>`;
     });
 
     html += `</div></div></div>`;
     document.getElementById('gameScreen').innerHTML = html;
     
-    if(!hasAnswered) {
-        startTimer();
-    } else {
-        let timerEl = document.getElementById('timerDisplay');
-        if(timerEl) {
-            timerEl.textContent = "⏱️ En attente...";
-            timerEl.className = 'timer';
-        }
-    }
+    // 🔥 LE TIMER NE S'ARRÊTE PLUS - IL TOURNE TOUT LE TEMPS
+    startTimer();
 }
 
 // ========== SOUMETTRE UNE RÉPONSE ==========
 async function submitAnswer(code, qIndex, ansIdx) {
-    if(answeringLocked) {
-        toast("Vous avez déjà répondu !", true);
-        return;
-    }
-    
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
     if(!room) return;
@@ -921,12 +905,11 @@ async function submitAnswer(code, qIndex, ansIdx) {
         return;
     }
 
+    // 🔥 VÉRIFIER SI LE JOUEUR A DÉJÀ RÉPONDU
     if(room.players[playerIndex].answers && room.players[playerIndex].answers.includes(qIndex)) {
-        toast("Déjà répondu !", true);
+        toast("Vous avez déjà répondu !", true);
         return;
     }
-
-    answeringLocked = true;
     
     let q = currentQuestions[qIndex];
     let isCorrect = ansIdx === q.correct;
@@ -938,7 +921,10 @@ async function submitAnswer(code, qIndex, ansIdx) {
     let updatedAnswers = [...(room.players[playerIndex].answers || []), qIndex];
     await roomRef.child(`players/${playerIndex}/answers`).set(updatedAnswers);
     await roomRef.child(`players/${playerIndex}/lastAnswer`).set(ansIdx);
-    await roomRef.child(`players/${playerIndex}/score`).set((room.players[playerIndex].score || 0) + (isCorrect ? 10 : 0));
+    
+    // Ajouter les points directement
+    let newScore = (room.players[playerIndex].score || 0) + (isCorrect ? 10 : 0);
+    await roomRef.child(`players/${playerIndex}/score`).set(newScore);
 
     // Notification
     if(isCorrect) {
@@ -947,25 +933,25 @@ async function submitAnswer(code, qIndex, ansIdx) {
         toast("❌ Mauvaise réponse... 0 point.");
     }
 
-    // Recharger la room pour voir les mises à jour
+    // 🔥 RECHARGER LE QUIZ POUR VOIR LE STATUT
     let updatedRoom = (await roomRef.once('value')).val();
     if(updatedRoom) {
         await showQuiz(updatedRoom, code);
     }
     
-    // Vérifier si les deux joueurs ont répondu
+    // 🔥 VÉRIFIER SI LES DEUX ONT RÉPONDU POUR PASSER À LA SUIVANTE
     let allAnswered = updatedRoom.players.every(p => p.answers && p.answers.includes(qIndex));
     
     if(allAnswered) {
         clearInterval(timerInterval);
-        // Passer à la question suivante après un délai
+        // Passer à la question suivante
         setTimeout(async () => {
             let roomRef2 = db.ref(`rooms/${code}`);
             let room2 = (await roomRef2.once('value')).val();
             if(room2) {
                 await loadNextQuestion(code, room2.currentQuestion + 1);
             }
-        }, 1200);
+        }, 600);
     }
 }
 
@@ -1005,7 +991,6 @@ function showFinalResults(room) {
         </div></div>`;
     document.getElementById('gameScreen').innerHTML = html;
     
-    // Lancer des confettis si victoire
     if(total >= 200) {
         triggerConfetti();
         setTimeout(triggerConfetti, 1000);
