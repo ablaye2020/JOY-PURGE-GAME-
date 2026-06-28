@@ -229,7 +229,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ========== QUESTIONS PARTIE 1 ==========
+// ========== QUESTIONS ==========
 const PART1_QUESTIONS = [
     { text: "Qui est le fondateur du clan GHOST ?", answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"], correct: 1 },
     { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "DIANNY", "NIGHT"], correct: 1 },
@@ -253,7 +253,6 @@ const PART1_QUESTIONS = [
     { text: "Qui était le chancelier de l'OMP ?", answers: ["ANGEL", "LORD IVAR", "SERAPHIN", "ANDRÉ"], correct: 1 }
 ];
 
-// ========== QUESTIONS PARTIE 2 ==========
 const PART2_QUESTIONS = [
     { text: "Qui est ce purgeur ?", image: "4492E8E3-4096-4810-8833-89039DB94EE0.png", answers: ["SIGHARAKI WORKER", "ARKHA CORVUS", "MONARQUE DES OMBRES", "NOLA D NAXE"], correct: 2 },
     { text: "Qui est-ce ?", image: "8F915A3B-0BB7-4BD3-9F35-3D91AC3EBDEA.jpeg", answers: ["ELYNA ZETSU", "SHAÏNA", "FLEUR SAUVAGE", "PRINCESSE EMMA"], correct: 2 },
@@ -406,7 +405,7 @@ function loadQuestions(part) {
     return currentQuestions;
 }
 
-// ========== EFFETS ÉPIQUES ==========
+// ========== EFFETS ==========
 function triggerEpicEffect(isCorrect) {
     let flash = document.createElement('div');
     flash.className = 'flash-overlay ' + (isCorrect ? 'green' : 'red');
@@ -623,7 +622,6 @@ function watchRoom(code) {
             document.getElementById('lobbyView').innerHTML = '';
             document.getElementById('gameScreen').style.display = 'block';
             
-            // 🔥 CHARGER LES BONNES QUESTIONS SELON currentPart
             if(currentQuestions.length === 0 || currentPart !== room.currentPart) {
                 currentPart = room.currentPart || 'partie1';
                 loadQuestions(currentPart);
@@ -735,7 +733,7 @@ async function autoSubmitAnswers() {
     
     setTimeout(async () => {
         await loadNextQuestion(currentRoomCode, room.currentQuestion + 1);
-    }, 400);
+    }, 200);
 }
 
 // ========== DÉMARRER LA PARTIE ==========
@@ -773,7 +771,6 @@ async function startPart2(code) {
     
     let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
     
-    // 🔥 METTRE À JOUR currentPart DANS FIREBASE
     await roomRef.update({
         status: 'playing',
         currentQuestion: 0,
@@ -785,16 +782,13 @@ async function startPart2(code) {
     triggerConfetti();
 }
 
-// ========== CHARGER LA QUESTION SUIVANTE ==========
+// ========== CHARGER LA QUESTION SUIVANTE (ULTRA RAPIDE) ==========
 async function loadNextQuestion(code, qIndex) {
-    console.log("📌 Chargement question", qIndex);
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
-    
     if(!room) return;
     
     if(qIndex >= currentQuestions.length) {
-        console.log("🏁 Fin des questions");
         if(room.currentPart === 'partie1') {
             let total = room.players.reduce((s,p) => s + (p.score || 0), 0);
             await roomRef.update({ status: 'part2_unlocked', scorePart1: total });
@@ -820,17 +814,16 @@ async function loadNextQuestion(code, qIndex) {
     }
 
     await roomRef.update({ currentQuestion: qIndex });
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, 100));
     let updatedRoom = (await roomRef.once('value')).val();
-    if(!updatedRoom) return;
-    
-    await showQuiz(updatedRoom, code);
+    if(updatedRoom) {
+        await showQuiz(updatedRoom, code);
+    }
 }
 
 // ========== AFFICHER LE QUIZ ==========
 async function showQuiz(room, code) {
     if(!room) return;
-    
     if(room.currentQuestion >= currentQuestions.length) {
         await loadNextQuestion(code, room.currentQuestion);
         return;
@@ -845,7 +838,6 @@ async function showQuiz(room, code) {
     let totalScore = room.players.reduce((s,p) => s + (p.score || 0), 0);
     let progress = (room.currentQuestion / currentQuestions.length) * 100;
 
-    // Statut des joueurs
     let statusHtml = `<div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap; margin-bottom:15px;">`;
     room.players.forEach(p => {
         let answered = p.answers && p.answers.includes(room.currentQuestion);
@@ -905,11 +897,7 @@ async function submitAnswer(code, qIndex, ansIdx) {
     if(!room) return;
     
     let playerIndex = room.players.findIndex(p => p.id === currentPlayerId);
-
-    if(playerIndex === -1) {
-        toast("Joueur non trouvé", true);
-        return;
-    }
+    if(playerIndex === -1) return;
 
     if(room.players[playerIndex].answers && room.players[playerIndex].answers.includes(qIndex)) {
         toast("Vous avez déjà répondu !", true);
@@ -928,11 +916,7 @@ async function submitAnswer(code, qIndex, ansIdx) {
     let newScore = (room.players[playerIndex].score || 0) + (isCorrect ? 10 : 0);
     await roomRef.child(`players/${playerIndex}/score`).set(newScore);
 
-    if(isCorrect) {
-        toast("🎉 BONNE RÉPONSE ! +10 points !");
-    } else {
-        toast("❌ Mauvaise réponse... 0 point.");
-    }
+    toast(isCorrect ? "🎉 BONNE RÉPONSE ! +10 points !" : "❌ Mauvaise réponse... 0 point.");
 
     let updatedRoom = (await roomRef.once('value')).val();
     if(updatedRoom) {
@@ -949,7 +933,7 @@ async function submitAnswer(code, qIndex, ansIdx) {
             if(room2) {
                 await loadNextQuestion(code, room2.currentQuestion + 1);
             }
-        }, 600);
+        }, 200);
     }
 }
 
