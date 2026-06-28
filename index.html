@@ -477,6 +477,7 @@ function enterRoom(code) {
 
 function watchRoom(code) {
     let roomRef = db.ref(`rooms/${code}`);
+    // Nettoyer l'ancien listener avant d'en créer un nouveau
     if(roomListener) roomListener();
     
     roomListener = roomRef.on('value', async (snap) => {
@@ -677,7 +678,6 @@ async function startPart2(code) {
     toast("🖼️ Partie 2 démarrée ! " + qCount + " questions");
 }
 
-// ========== FONCTION PRINCIPALE : CHARGER LA QUESTION SUIVANTE ==========
 async function loadNextQuestion(code, qIndex) {
     console.log("📌 Chargement question", qIndex);
     let roomRef = db.ref(`rooms/${code}`);
@@ -709,18 +709,12 @@ async function loadNextQuestion(code, qIndex) {
         return;
     }
 
-    // METTRE À JOUR LA QUESTION COURANTE
     await roomRef.update({ currentQuestion: qIndex });
-    
-    // ATTENDRE UN PEU POUR QUE LA MISE À JOUR SE PROPAGE
     await new Promise(resolve => setTimeout(resolve, 200));
-    
-    // RECHARGER LA ROOM AVEC LA NOUVELLE QUESTION
     let updatedRoom = (await roomRef.once('value')).val();
     await showQuiz(updatedRoom, code);
 }
 
-// ========== AFFICHER LE QUIZ ==========
 async function showQuiz(room, code) {
     if(room.currentQuestion >= currentQuestions.length) {
         await loadNextQuestion(code, room.currentQuestion);
@@ -770,7 +764,6 @@ async function showQuiz(room, code) {
     startTimer();
 }
 
-// ========== SOUMETTRE UNE RÉPONSE ==========
 async function submitAnswer(code, qIndex, ansIdx) {
     if(isAnswered) {
         toast("Vous avez déjà répondu !", true);
@@ -845,7 +838,6 @@ async function submitAnswer(code, qIndex, ansIdx) {
             toast("❌ " + wrongCount + " FAUX ! 0 point.");
         }
         
-        // PASSAGE RAPIDE À LA QUESTION SUIVANTE
         setTimeout(async () => {
             let roomRef2 = db.ref(`rooms/${code}`);
             let room2 = (await roomRef2.once('value')).val();
@@ -859,7 +851,6 @@ async function submitAnswer(code, qIndex, ansIdx) {
     }
 }
 
-// ========== RÉSULTATS FINAUX ==========
 function showFinalResults(room) {
     clearInterval(timerInterval);
     let players = [...room.players];
