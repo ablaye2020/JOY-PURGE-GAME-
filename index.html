@@ -46,17 +46,70 @@
         .player-card img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; border: 2px solid #ffcc00; }
         .code-box { font-size: 2.5em; text-align: center; background: #000; padding: 15px; border-radius: 15px; letter-spacing: 8px; color: #ffcc00; margin: 15px 0; font-weight: bold; }
         .team-card { background: rgba(0,0,0,0.6); border-left: 4px solid #ffcc00; padding: 12px; margin: 8px 0; display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; }
-        .quiz-area { background: rgba(0,0,0,0.95); border-radius: 20px; padding: 25px; }
+        .quiz-area { background: rgba(0,0,0,0.95); border-radius: 20px; padding: 25px; position: relative; overflow: hidden; }
         .question-text { font-size: 1.2em; text-align: center; margin: 20px 0; color: #ffcc00; }
         .question-img { width: 100%; max-height: 280px; object-fit: cover; object-position: center 20%; border-radius: 15px; background: #0a0a0a; margin: 15px 0; border: 2px solid #ff6600; }
         .answers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
         .answer { background: #333; border: 2px solid #ff6600; padding: 15px; border-radius: 15px; cursor: pointer; text-align: center; transition: 0.2s; }
         .answer:hover { background: #ff3300; transform: scale(1.02); }
         .answer:disabled { background: #555; cursor: not-allowed; opacity: 0.5; }
-        .answer.selected { background: #008800; border-color: #00ff00; }
-        .answer.correct-display { background: #008800; border-color: #00ff00; }
-        .answer.wrong-display { background: #cc0000; border-color: #ff0000; }
+        .answer.selected-correct { background: #008800; border-color: #00ff00; animation: correctPulse 0.8s ease; }
+        .answer.selected-wrong { background: #cc0000; border-color: #ff0000; animation: wrongShake 0.8s ease; }
         .answer.timeout { background: #555; border-color: #888; opacity: 0.5; text-decoration: line-through; }
+        
+        /* ========== EFFETS ÉPIQUES ========== */
+        @keyframes correctPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0,255,0,0); }
+            30% { transform: scale(1.15); box-shadow: 0 0 60px 20px rgba(0,255,0,0.6); }
+            70% { transform: scale(1.05); box-shadow: 0 0 40px 10px rgba(0,255,0,0.3); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0,255,0,0); }
+        }
+        
+        @keyframes wrongShake {
+            0% { transform: translateX(0); box-shadow: 0 0 0 0 rgba(255,0,0,0); }
+            15% { transform: translateX(-15px); box-shadow: 0 0 40px 10px rgba(255,0,0,0.5); }
+            30% { transform: translateX(15px); box-shadow: 0 0 40px 10px rgba(255,0,0,0.5); }
+            45% { transform: translateX(-10px); }
+            60% { transform: translateX(10px); }
+            80% { transform: translateX(-5px); }
+            100% { transform: translateX(0); box-shadow: 0 0 0 0 rgba(255,0,0,0); }
+        }
+        
+        @keyframes epicFlash {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            20% { opacity: 0; }
+            30% { opacity: 1; }
+            40% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+        
+        @keyframes victoryBurst {
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: scale(2) rotate(360deg); opacity: 0; }
+        }
+        
+        .flash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            animation: epicFlash 0.6s ease;
+        }
+        .flash-overlay.green { background: rgba(0,255,0,0.15); }
+        .flash-overlay.red { background: rgba(255,0,0,0.2); }
+        
+        .burst-particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9998;
+            border-radius: 50%;
+            animation: victoryBurst 1s ease forwards;
+        }
+        
         .progress-bar { width: 100%; height: 12px; background: #333; border-radius: 10px; overflow: hidden; margin: 20px 0; }
         .progress-fill { height: 100%; background: linear-gradient(90deg, #ffcc00, #ff6600); width: 0%; transition: width 0.3s; }
         .timer { font-size: 2em; text-align: center; color: #ffcc00; margin: 10px 0; }
@@ -177,7 +230,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ========== QUESTIONS PARTIE 1 ==========
+// ========== QUESTIONS ==========
 const PART1_QUESTIONS = [
     { text: "Qui est le fondateur du clan GHOST ?", answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"], correct: 1 },
     { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "DIANNY", "NIGHT"], correct: 1 },
@@ -201,7 +254,6 @@ const PART1_QUESTIONS = [
     { text: "Qui était le chancelier de l'OMP ?", answers: ["ANGEL", "LORD IVAR", "SERAPHIN", "ANDRÉ"], correct: 1 }
 ];
 
-// ========== QUESTIONS PARTIE 2 ==========
 const PART2_QUESTIONS = [
     { text: "Qui est ce purgeur ?", image: "4492E8E3-4096-4810-8833-89039DB94EE0.png", answers: ["SIGHARAKI WORKER", "ARKHA CORVUS", "MONARQUE DES OMBRES", "NOLA D NAXE"], correct: 2 },
     { text: "Qui est-ce ?", image: "8F915A3B-0BB7-4BD3-9F35-3D91AC3EBDEA.jpeg", answers: ["ELYNA ZETSU", "SHAÏNA", "FLEUR SAUVAGE", "PRINCESSE EMMA"], correct: 2 },
@@ -243,6 +295,7 @@ let isAnswered = false;
 let gameSeed = Date.now();
 let currentTeamName = '';
 let isHost = false;
+let answeringLocked = false;
 
 function initMusic() { bgMusic = document.getElementById('bgMusic'); if(bgMusic) bgMusic.volume = 0.2; }
 function toggleMusic() { if(!bgMusic) initMusic(); if(musicPlaying) { bgMusic.pause(); musicPlaying=false; document.getElementById('musicBtn').innerHTML='🎵'; } else { bgMusic.play().catch(e=>{}); musicPlaying=true; document.getElementById('musicBtn').innerHTML='🎵🔊'; } }
@@ -353,6 +406,50 @@ function loadQuestions(part) {
         currentQuestions = shuffleArray([...PART2_QUESTIONS], seed + 999);
     }
     return currentQuestions;
+}
+
+// ========== EFFETS ÉPIQUES ==========
+function triggerEpicEffect(isCorrect) {
+    // Flash d'écran
+    let flash = document.createElement('div');
+    flash.className = 'flash-overlay ' + (isCorrect ? 'green' : 'red');
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 600);
+    
+    // Particules
+    const colors = isCorrect ? ['#FFD700', '#00ff00', '#FFA500', '#ffffff'] : ['#ff0000', '#8B0000', '#ff4444', '#ff6666'];
+    for(let i = 0; i < 50; i++) {
+        let particle = document.createElement('div');
+        particle.className = 'burst-particle';
+        let size = Math.random() * 15 + 5;
+        particle.style.width = size + 'px';
+        particle.style.height = size + 'px';
+        particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+        particle.style.left = (Math.random() * 80 + 10) + '%';
+        particle.style.top = (Math.random() * 80 + 10) + '%';
+        particle.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        particle.style.boxShadow = isCorrect ? '0 0 20px rgba(255,215,0,0.5)' : '0 0 20px rgba(255,0,0,0.5)';
+        document.body.appendChild(particle);
+        setTimeout(() => particle.remove(), 1000);
+    }
+}
+
+function triggerConfetti() {
+    const colors = ['#ffcc00', '#ff3300', '#00ff00', '#0066cc', '#ff00ff', '#00ffff', '#ffffff'];
+    for(let i = 0; i < 80; i++) {
+        let confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.top = '-10px';
+        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.width = (Math.random() * 8 + 4) + 'px';
+        confetti.style.height = (Math.random() * 8 + 4) + 'px';
+        confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        confetti.style.animationDelay = (Math.random() * 1.5) + 's';
+        document.body.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 4000);
+    }
 }
 
 // ========== CRÉER UNE ÉQUIPE (HÔTE) ==========
@@ -586,7 +683,7 @@ function startTimer() {
             timerEl.textContent = "⏱️ 0s";
             document.querySelectorAll('.answer').forEach(b => {
                 b.disabled = true;
-                if(!b.classList.contains('selected')) {
+                if(!b.classList.contains('selected-correct') && !b.classList.contains('selected-wrong')) {
                     b.classList.add('timeout');
                 }
             });
@@ -623,6 +720,7 @@ async function autoSubmitAnswers() {
         }
         await roomRef.set(updatedRoom);
         toast("✅ TOUS JUSTES ! +10 points !");
+        triggerConfetti();
     } else if(wrongCount === 1) {
         for(let p of activePlayers.filter(p => p.lastAnswer === q.correct)) {
             p.score = (p.score || 0) + 5;
@@ -658,6 +756,7 @@ async function startGame(code) {
     });
     
     toast("🎮 Partie 1 démarrée ! " + qCount + " questions");
+    triggerConfetti();
 }
 
 async function startPart2(code) {
@@ -679,6 +778,7 @@ async function startPart2(code) {
     });
     
     toast("🖼️ Partie 2 démarrée ! " + qCount + " questions");
+    triggerConfetti();
 }
 
 // ========== CHARGER LA QUESTION SUIVANTE ==========
@@ -689,7 +789,6 @@ async function loadNextQuestion(code, qIndex) {
     
     if(!room) return;
     
-    // Vérifier si toutes les questions sont finies
     if(qIndex >= currentQuestions.length) {
         console.log("🏁 Fin des questions");
         if(room.currentPart === 'partie1') {
@@ -716,17 +815,13 @@ async function loadNextQuestion(code, qIndex) {
         return;
     }
 
-    // 🔥 FORCER LA MISE À JOUR DE LA QUESTION COURANTE
     await roomRef.update({ currentQuestion: qIndex });
-    
-    // 🔥 ATTENDRE 300ms POUR LA SYNCHRONISATION
     await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // 🔥 RECHARGER LA ROOM AVEC LA NOUVELLE QUESTION
     let updatedRoom = (await roomRef.once('value')).val();
     if(!updatedRoom) return;
     
-    // 🔥 FORCER L'AFFICHAGE DU QUIZ
+    // Réinitialiser le verrou de réponse
+    answeringLocked = false;
     await showQuiz(updatedRoom, code);
 }
 
@@ -734,7 +829,6 @@ async function loadNextQuestion(code, qIndex) {
 async function showQuiz(room, code) {
     if(!room) return;
     
-    // 🔥 VÉRIFIER SI LA QUESTION EXISTE
     if(room.currentQuestion >= currentQuestions.length) {
         await loadNextQuestion(code, room.currentQuestion);
         return;
@@ -749,7 +843,7 @@ async function showQuiz(room, code) {
     let totalScore = room.players.reduce((s,p) => s + (p.score || 0), 0);
     let progress = (room.currentQuestion / currentQuestions.length) * 100;
 
-    // 🔥 AFFICHER LE STATUT DES JOUEURS (qui a répondu)
+    // Statut des joueurs
     let statusHtml = `<div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap; margin-bottom:15px;">`;
     room.players.forEach(p => {
         let answered = p.answers && p.answers.includes(room.currentQuestion);
@@ -774,24 +868,33 @@ async function showQuiz(room, code) {
     html += `<div class="question-text">${escapeHtml(q.text)}</div>
         <div class="answers" id="answersContainer">`;
 
-    // 🔥 VÉRIFIER SI LE JOUEUR A DÉJÀ RÉPONDU
     let player = room.players.find(p => p.id === currentPlayerId);
     let hasAnswered = player && player.answers && player.answers.includes(room.currentQuestion);
 
     q.answers.forEach((ans, i) => {
         let isSelected = hasAnswered && player.lastAnswer === i;
+        let isCorrect = hasAnswered && i === q.correct;
+        let isWrong = hasAnswered && player.lastAnswer === i && i !== q.correct;
+        
+        let classes = 'answer';
+        if(hasAnswered) {
+            if(isSelected && isCorrect) classes += ' selected-correct';
+            else if(isSelected && isWrong) classes += ' selected-wrong';
+            else if(i === q.correct && player.lastAnswer !== i) classes += ' correct-display';
+        }
+        
         let disabled = hasAnswered;
-        html += `<div class="answer ${isSelected ? 'selected' : ''}" id="answer_${i}" onclick="${disabled ? '' : `submitAnswer('${code}', ${room.currentQuestion}, ${i})`}" style="${disabled ? (isSelected ? 'background:#008800; border-color:#00ff00; cursor:default;' : 'background:#555; cursor:not-allowed; opacity:0.5;') : ''}">${String.fromCharCode(65+i)}. ${escapeHtml(ans)}</div>`;
+        let onclick = disabled ? '' : `submitAnswer('${code}', ${room.currentQuestion}, ${i})`;
+        
+        html += `<div class="${classes}" id="answer_${i}" onclick="${onclick}" style="${disabled ? (isSelected ? '' : 'cursor:default;') : ''}">${String.fromCharCode(65+i)}. ${escapeHtml(ans)}</div>`;
     });
 
     html += `</div></div></div>`;
     document.getElementById('gameScreen').innerHTML = html;
     
-    // 🔥 DÉMARRER LE TIMER SEULEMENT SI LE JOUEUR N'A PAS ENCORE RÉPONDU
     if(!hasAnswered) {
         startTimer();
     } else {
-        // Si le joueur a déjà répondu, afficher "En attente..."
         let timerEl = document.getElementById('timerDisplay');
         if(timerEl) {
             timerEl.textContent = "⏱️ En attente...";
@@ -802,7 +905,7 @@ async function showQuiz(room, code) {
 
 // ========== SOUMETTRE UNE RÉPONSE ==========
 async function submitAnswer(code, qIndex, ansIdx) {
-    if(isAnswered) {
+    if(answeringLocked) {
         toast("Vous avez déjà répondu !", true);
         return;
     }
@@ -823,78 +926,46 @@ async function submitAnswer(code, qIndex, ansIdx) {
         return;
     }
 
-    isAnswered = true;
+    answeringLocked = true;
     
-    document.querySelectorAll('.answer').forEach(b => b.disabled = true);
+    let q = currentQuestions[qIndex];
+    let isCorrect = ansIdx === q.correct;
     
-    let selectedBtn = document.getElementById('answer_' + ansIdx);
-    if(selectedBtn) {
-        selectedBtn.classList.add('selected');
-    }
-
+    // Effet épique
+    triggerEpicEffect(isCorrect);
+    
+    // Mettre à jour la réponse
     let updatedAnswers = [...(room.players[playerIndex].answers || []), qIndex];
     await roomRef.child(`players/${playerIndex}/answers`).set(updatedAnswers);
     await roomRef.child(`players/${playerIndex}/lastAnswer`).set(ansIdx);
+    await roomRef.child(`players/${playerIndex}/score`).set((room.players[playerIndex].score || 0) + (isCorrect ? 10 : 0));
 
+    // Notification
+    if(isCorrect) {
+        toast("🎉 BONNE RÉPONSE ! +10 points !");
+    } else {
+        toast("❌ Mauvaise réponse... 0 point.");
+    }
+
+    // Recharger la room pour voir les mises à jour
     let updatedRoom = (await roomRef.once('value')).val();
-    if(!updatedRoom) return;
+    if(updatedRoom) {
+        await showQuiz(updatedRoom, code);
+    }
     
+    // Vérifier si les deux joueurs ont répondu
     let allAnswered = updatedRoom.players.every(p => p.answers && p.answers.includes(qIndex));
-
+    
     if(allAnswered) {
         clearInterval(timerInterval);
-        
-        let q = currentQuestions[qIndex];
-        let activePlayers = updatedRoom.players.filter(p => p.lastAnswer !== -1);
-        let wrongCount = activePlayers.filter(p => p.lastAnswer !== q.correct).length;
-        
-        let qCorrect = q.correct;
-        document.querySelectorAll('.answer').forEach((el, idx) => {
-            if(idx === qCorrect) {
-                el.classList.add('correct-display');
-            } else if(room.players.some(p => p.lastAnswer === idx && p.lastAnswer !== qCorrect)) {
-                el.classList.add('wrong-display');
-            }
-        });
-        
-        if(wrongCount === 0 && activePlayers.length > 0) {
-            for(let p of activePlayers) {
-                p.score = (p.score || 0) + 10;
-            }
-            await roomRef.set(updatedRoom);
-            toast("✅ TOUS JUSTES ! +10 points !");
-        } else if(wrongCount === 1 && activePlayers.length > 1) {
-            for(let p of activePlayers.filter(p => p.lastAnswer === q.correct)) {
-                p.score = (p.score || 0) + 5;
-            }
-            await roomRef.set(updatedRoom);
-            toast("⚠️ 1 FAUX ! Les justes gagnent 5 points.");
-        } else if(activePlayers.length === 1 && wrongCount === 0) {
-            for(let p of activePlayers) {
-                p.score = (p.score || 0) + 10;
-            }
-            await roomRef.set(updatedRoom);
-            toast("✅ Le seul répondant a juste ! +10 points !");
-        } else {
-            toast("❌ " + wrongCount + " FAUX ! 0 point.");
-        }
-        
-        // 🔥 FORCER LE PASSAGE À LA QUESTION SUIVANTE APRÈS 300ms
+        // Passer à la question suivante après un délai
         setTimeout(async () => {
             let roomRef2 = db.ref(`rooms/${code}`);
             let room2 = (await roomRef2.once('value')).val();
             if(room2) {
                 await loadNextQuestion(code, room2.currentQuestion + 1);
             }
-        }, 300);
-        
-    } else {
-        // 🔥 RÉAFFICHER LE QUIZ POUR VOIR QUI A RÉPONDU
-        let roomAfterAnswer = (await roomRef.once('value')).val();
-        if(roomAfterAnswer) {
-            await showQuiz(roomAfterAnswer, code);
-        }
-        toast("✅ Réponse enregistrée ! En attente des autres...");
+        }, 1200);
     }
 }
 
@@ -933,6 +1004,13 @@ function showFinalResults(room) {
             <button class="btn btn-blue" onclick="showPasswordPrompt()">🔐 RECONNEXION</button>
         </div></div>`;
     document.getElementById('gameScreen').innerHTML = html;
+    
+    // Lancer des confettis si victoire
+    if(total >= 200) {
+        triggerConfetti();
+        setTimeout(triggerConfetti, 1000);
+        setTimeout(triggerConfetti, 2000);
+    }
 }
 
 function showPasswordPrompt() {
