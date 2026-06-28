@@ -569,6 +569,7 @@ function enterRoom(code) {
     watchRoom(code);
 }
 
+// ========== WATCH ROOM (OPTIMISÉ) ==========
 function watchRoom(code) {
     let roomRef = db.ref(`rooms/${code}`);
     if(roomListener) roomListener();
@@ -733,7 +734,7 @@ async function autoSubmitAnswers() {
     
     setTimeout(async () => {
         await loadNextQuestion(currentRoomCode, room.currentQuestion + 1);
-    }, 200);
+    }, 100);
 }
 
 // ========== DÉMARRER LA PARTIE ==========
@@ -785,6 +786,10 @@ async function startPart2(code) {
 // ========== CHARGER LA QUESTION SUIVANTE (ULTRA RAPIDE) ==========
 async function loadNextQuestion(code, qIndex) {
     let roomRef = db.ref(`rooms/${code}`);
+    
+    await roomRef.update({ currentQuestion: qIndex });
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
     let room = (await roomRef.once('value')).val();
     if(!room) return;
     
@@ -813,12 +818,7 @@ async function loadNextQuestion(code, qIndex) {
         return;
     }
 
-    await roomRef.update({ currentQuestion: qIndex });
-    await new Promise(resolve => setTimeout(resolve, 100));
-    let updatedRoom = (await roomRef.once('value')).val();
-    if(updatedRoom) {
-        await showQuiz(updatedRoom, code);
-    }
+    await showQuiz(room, code);
 }
 
 // ========== AFFICHER LE QUIZ ==========
@@ -890,7 +890,7 @@ async function showQuiz(room, code) {
     startTimer();
 }
 
-// ========== SOUMETTRE UNE RÉPONSE (CORRIGÉ) ==========
+// ========== SOUMETTRE UNE RÉPONSE ==========
 async function submitAnswer(code, qIndex, ansIdx) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
@@ -923,7 +923,6 @@ async function submitAnswer(code, qIndex, ansIdx) {
         await showQuiz(updatedRoom, code);
     }
     
-    // 🔥 VÉRIFIER SI LES DEUX ONT RÉPONDU (PEU IMPORTE SI JUSTE OU FAUX)
     let allAnswered = updatedRoom.players.every(p => p.answers && p.answers.includes(qIndex));
     
     if(allAnswered) {
@@ -934,7 +933,7 @@ async function submitAnswer(code, qIndex, ansIdx) {
             if(room2) {
                 await loadNextQuestion(code, room2.currentQuestion + 1);
             }
-        }, 200);
+        }, 100);
     }
 }
 
