@@ -229,7 +229,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ========== QUESTIONS ==========
+// ========== QUESTIONS PARTIE 1 ==========
 const PART1_QUESTIONS = [
     { text: "Qui est le fondateur du clan GHOST ?", answers: ["NESTOR GHOST", "JAMES GHOST", "FANTÔME GHOST", "JACK GHOST"], correct: 1 },
     { text: "Qui est le fondateur d'Info Purge 24 ?", answers: ["JOYBOY", "WILLIAM", "DIANNY", "NIGHT"], correct: 1 },
@@ -253,6 +253,7 @@ const PART1_QUESTIONS = [
     { text: "Qui était le chancelier de l'OMP ?", answers: ["ANGEL", "LORD IVAR", "SERAPHIN", "ANDRÉ"], correct: 1 }
 ];
 
+// ========== QUESTIONS PARTIE 2 ==========
 const PART2_QUESTIONS = [
     { text: "Qui est ce purgeur ?", image: "4492E8E3-4096-4810-8833-89039DB94EE0.png", answers: ["SIGHARAKI WORKER", "ARKHA CORVUS", "MONARQUE DES OMBRES", "NOLA D NAXE"], correct: 2 },
     { text: "Qui est-ce ?", image: "8F915A3B-0BB7-4BD3-9F35-3D91AC3EBDEA.jpeg", answers: ["ELYNA ZETSU", "SHAÏNA", "FLEUR SAUVAGE", "PRINCESSE EMMA"], correct: 2 },
@@ -482,6 +483,7 @@ async function createTeam() {
             status: 'waiting',
             currentQuestion: 0,
             scorePart1: 0,
+            currentPart: 'partie1',
             createdAt: Date.now()
         });
 
@@ -620,8 +622,11 @@ function watchRoom(code) {
         else if(room.status === 'playing') {
             document.getElementById('lobbyView').innerHTML = '';
             document.getElementById('gameScreen').style.display = 'block';
-            if(currentQuestions.length === 0) {
-                loadQuestions(room.currentPart || 'partie1');
+            
+            // 🔥 CHARGER LES BONNES QUESTIONS SELON currentPart
+            if(currentQuestions.length === 0 || currentPart !== room.currentPart) {
+                currentPart = room.currentPart || 'partie1';
+                loadQuestions(currentPart);
             }
             await showQuiz(room, code);
         }
@@ -756,6 +761,7 @@ async function startGame(code) {
     triggerConfetti();
 }
 
+// ========== DÉMARRER LA PARTIE 2 ==========
 async function startPart2(code) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
@@ -767,6 +773,7 @@ async function startPart2(code) {
     
     let updatedPlayers = room.players.map(p => ({ ...p, answers: [], lastAnswer: null }));
     
+    // 🔥 METTRE À JOUR currentPart DANS FIREBASE
     await roomRef.update({
         status: 'playing',
         currentQuestion: 0,
@@ -888,7 +895,6 @@ async function showQuiz(room, code) {
     html += `</div></div></div>`;
     document.getElementById('gameScreen').innerHTML = html;
     
-    // 🔥 LE TIMER NE S'ARRÊTE PLUS - IL TOURNE TOUT LE TEMPS
     startTimer();
 }
 
@@ -905,7 +911,6 @@ async function submitAnswer(code, qIndex, ansIdx) {
         return;
     }
 
-    // 🔥 VÉRIFIER SI LE JOUEUR A DÉJÀ RÉPONDU
     if(room.players[playerIndex].answers && room.players[playerIndex].answers.includes(qIndex)) {
         toast("Vous avez déjà répondu !", true);
         return;
@@ -914,37 +919,30 @@ async function submitAnswer(code, qIndex, ansIdx) {
     let q = currentQuestions[qIndex];
     let isCorrect = ansIdx === q.correct;
     
-    // Effet épique
     triggerEpicEffect(isCorrect);
     
-    // Mettre à jour la réponse
     let updatedAnswers = [...(room.players[playerIndex].answers || []), qIndex];
     await roomRef.child(`players/${playerIndex}/answers`).set(updatedAnswers);
     await roomRef.child(`players/${playerIndex}/lastAnswer`).set(ansIdx);
     
-    // Ajouter les points directement
     let newScore = (room.players[playerIndex].score || 0) + (isCorrect ? 10 : 0);
     await roomRef.child(`players/${playerIndex}/score`).set(newScore);
 
-    // Notification
     if(isCorrect) {
         toast("🎉 BONNE RÉPONSE ! +10 points !");
     } else {
         toast("❌ Mauvaise réponse... 0 point.");
     }
 
-    // 🔥 RECHARGER LE QUIZ POUR VOIR LE STATUT
     let updatedRoom = (await roomRef.once('value')).val();
     if(updatedRoom) {
         await showQuiz(updatedRoom, code);
     }
     
-    // 🔥 VÉRIFIER SI LES DEUX ONT RÉPONDU POUR PASSER À LA SUIVANTE
     let allAnswered = updatedRoom.players.every(p => p.answers && p.answers.includes(qIndex));
     
     if(allAnswered) {
         clearInterval(timerInterval);
-        // Passer à la question suivante
         setTimeout(async () => {
             let roomRef2 = db.ref(`rooms/${code}`);
             let room2 = (await roomRef2.once('value')).val();
