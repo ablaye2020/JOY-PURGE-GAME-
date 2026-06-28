@@ -890,7 +890,7 @@ async function showQuiz(room, code) {
     startTimer();
 }
 
-// ========== SOUMETTRE UNE RÉPONSE ==========
+// ========== SOUMETTRE UNE RÉPONSE (CORRIGÉ) ==========
 async function submitAnswer(code, qIndex, ansIdx) {
     let roomRef = db.ref(`rooms/${code}`);
     let room = (await roomRef.once('value')).val();
@@ -923,6 +923,7 @@ async function submitAnswer(code, qIndex, ansIdx) {
         await showQuiz(updatedRoom, code);
     }
     
+    // 🔥 VÉRIFIER SI LES DEUX ONT RÉPONDU (PEU IMPORTE SI JUSTE OU FAUX)
     let allAnswered = updatedRoom.players.every(p => p.answers && p.answers.includes(qIndex));
     
     if(allAnswered) {
